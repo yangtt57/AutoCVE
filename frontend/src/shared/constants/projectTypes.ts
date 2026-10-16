@@ -55,6 +55,11 @@ export const SOURCE_TYPE_COLORS: Record<ProjectSourceType, {
     bg: 'bg-amber-100',
     text: 'text-amber-800',
     border: 'border-amber-300'
+  },
+  local_directory: {
+    bg: 'bg-slate-100',
+    text: 'text-slate-800',
+    border: 'border-slate-300'
   }
 };
 

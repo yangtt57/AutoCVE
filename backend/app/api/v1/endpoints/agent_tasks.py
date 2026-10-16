@@ -33,6 +33,7 @@ from app.models.agent_task import (
 )
 from app.models.audit_session import AuditCheckpoint, AuditSession, AuditSessionMessage, AuditSessionTurn, AuditToolCall
 from app.services.finding_runtime.config import FindingRuntimeStack, coerce_finding_runtime_stack
+from app.services.discovery.models import DiscoveryConfig
 from app.services.finding_runtime.final_finding_contract import has_meaningful_poc, is_placeholder_finding
 from app.models.project import Project
 from app.models.user import User
@@ -163,6 +164,8 @@ class AgentTaskCreate(BaseModel):
     max_iterations: int = Field(50, ge=1, le=200, description="Maximum agent iterations")
     timeout_seconds: int = Field(1800, ge=60, le=7200, description="Task timeout in seconds")
     finding_runtime_stack: Optional[str] = Field(None, description="Finding runtime stack: legacy or runtime")
+    discovery_v2: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
+    token_budget: int = Field(100000, ge=1000, le=2000000)
 
 
 class AgentTaskResponse(BaseModel):
@@ -184,6 +187,7 @@ class AgentTaskResponse(BaseModel):
     total_files: int = 0
     indexed_files: int = 0
     analyzed_files: int = 0
+    coverage: dict = Field(default_factory=lambda: {"basis": "unknown", "read_file_count": None})
     files_with_findings: int = 0
     total_chunks: int = 0
     
@@ -221,6 +225,7 @@ class AgentTaskResponse(BaseModel):
     error_message: Optional[str] = None
     runtime_session_id: Optional[str] = None
     finding_runtime_stack: str = FindingRuntimeStack.RUNTIME.value
+    discovery_v2: Optional[dict] = None
     finding_outcome: str = "none"
     runtime_completion_mode: Optional[str] = None
     finalized_findings_count: int = 0
@@ -1378,7 +1383,7 @@ async def _execute_agent_task_impl(task_id: str):
             task.total_files = project_info.get("file_count", 0)
             await db.commit()
 
-            preloaded_memories = await _bootstrap_legacy_agent_memories(
+            preloaded_memories = {} if (task.agent_config or {}).get("discovery_v2", {}).get("enabled") else await _bootstrap_legacy_agent_memories(
                 agents=legacy_agents,
                 project_root=project_root,
                 project_info=project_info,
@@ -1406,6 +1411,9 @@ async def _execute_agent_task_impl(task_id: str):
                     "exclude_patterns": task.exclude_patterns or [],
                     "target_files": task.target_files or [],
                     "max_iterations": task.max_iterations or 50,
+                    "token_budget": task.token_budget or 100000,
+                    "timeout_seconds": task.timeout_seconds or 1800,
+                    "discovery_v2": runtime_agent_config.get("discovery_v2", {}),
                     "finding_runtime_max_iterations": resolve_runtime_turn_limit("finding"),
                     "user_id": task.created_by,
                     "finding_runtime_stack": finding_runtime_stack,
@@ -1441,12 +1449,28 @@ async def _execute_agent_task_impl(task_id: str):
             duration_ms = int((time.time() - start_time) * 1000)
             task.completed_at = datetime.now(timezone.utc)
 
-            if result.success:
+            if result.success and isinstance(result.data, dict) and result.data.get("discovery_v2"):
+                summary = result.data["summary"]
+                task.status = summary["status"]
+                task.current_phase = AgentTaskPhase.REPORTING
+                task.current_step = "静态审计部分完成，存在待处理项" if task.status == "partial" else "静态源码审计已完成"
+                task.security_score = None
+                task.analyzed_files = summary.get("read_file_count", 0)
+                task.findings_count = summary.get("statically_supported", 0)
+                task.verified_count = 0
+                task.tokens_used = int(task.tokens_used or 0) + result.data.get("tokens_used", 0)
+                task.agent_config = {**(task.agent_config or {}), "discovery_result": {
+                    "run_id": result.data["run_id"], "status": summary["status"], "summary": summary}}
+                await db.commit()
+                await event_emitter.emit_phase_complete("reporting", f"Static discovery: {summary['status']}")
+            elif result.success:
                 findings = (result.data or {}).get("findings", []) if isinstance(result.data, dict) else []
                 saved_count = await _save_findings(db, task_id, findings, project_root=project_root)
-                task.status = AgentTaskStatus.CANCELLED if is_task_cancelled(task_id) else AgentTaskStatus.COMPLETED
+                task.status = (AgentTaskStatus.CANCELLED if is_task_cancelled(task_id)
+                               else AgentTaskStatus.PARTIAL if (result.data or {}).get("partial")
+                               else AgentTaskStatus.COMPLETED)
                 task.current_phase = AgentTaskPhase.REPORTING
-                task.security_score = _calculate_security_score(findings)
+                task.security_score = None
                 task.total_iterations = getattr(orchestrator, "iteration_count", task.total_iterations or 0)
                 task.tool_calls_count = getattr(orchestrator, "tool_call_count", task.tool_calls_count or 0)
                 task.tokens_used = _resolve_completed_task_tokens_used(
@@ -1461,11 +1485,19 @@ async def _execute_agent_task_impl(task_id: str):
                     task.tool_calls_count = max(int(task.tool_calls_count or 0), int(runtime_stats["tool_calls_count"]))
                 if runtime_stats.get("tokens_used"):
                     task.tokens_used = max(int(task.tokens_used or 0), int(runtime_stats["tokens_used"]))
-                task.analyzed_files = task.total_files
+                from app.services.agent.read_coverage import task_read_coverage
+                read_coverage = await task_read_coverage(db, task_id, task.total_files or 0)
+                phases = (result.data or {}).get("phases", {})
+                scan_runs = (phases.get("scan", {}).get("data") or {}).get("scanner_runs", [])
+                scan_counts = [r.get("targets_scanned") for r in scan_runs]
+                read_coverage["scanned_file_count"] = (scan_counts[0] if len(scan_counts) == 1 else None)
+                read_coverage["triage"] = (phases.get("triage", {}).get("data") or {}).get("coverage", {})
+                task.analyzed_files = read_coverage["read_file_count"]
                 task.duration_ms = duration_ms
                 saved_findings = await _load_task_findings(db, task_id)
                 _apply_task_finding_metrics(task, saved_findings)
                 runtime_agent_config = dict(task.agent_config or {})
+                runtime_agent_config["read_coverage"] = read_coverage
                 runtime_agent_config["finding_runtime_result"] = _build_finding_runtime_result_snapshot(
                     persisted_findings_count=len(saved_findings),
                     finding_payload=_extract_finding_runtime_payload(result.data),
@@ -2571,7 +2603,9 @@ async def create_agent_task(
         target_files=request.target_files,
         max_iterations=request.max_iterations or 50,
         timeout_seconds=request.timeout_seconds or 1800,
-        agent_config={"finding_runtime_stack": coerce_finding_runtime_stack(request.finding_runtime_stack or getattr(settings, "FINDING_RUNTIME_STACK_DEFAULT", FindingRuntimeStack.LEGACY.value)).value},
+        token_budget=request.token_budget,
+        agent_config={"finding_runtime_stack": coerce_finding_runtime_stack(request.finding_runtime_stack or getattr(settings, "FINDING_RUNTIME_STACK_DEFAULT", FindingRuntimeStack.LEGACY.value)).value,
+                      **({"discovery_v2": request.discovery_v2.model_dump()} if request.discovery_v2.enabled else {})},
         created_by=current_user.id,
         audit_scope=request.audit_scope,
     )
@@ -2603,10 +2637,10 @@ async def list_agent_tasks(
     if project_id:
         query = query.where(AgentTask.project_id == project_id)
     if status:
-        try:
-            query = query.where(AgentTask.status == AgentTaskStatus(status))
-        except ValueError:
-            pass
+        allowed = {v for k, v in vars(AgentTaskStatus).items() if k.isupper()}
+        if status not in allowed:
+            raise HTTPException(422, "Unknown task status")
+        query = query.where(AgentTask.status == status)
 
     result = await db.execute(query.order_by(AgentTask.created_at.desc()).offset(skip).limit(limit))
     tasks = result.scalars().all()
@@ -2623,6 +2657,7 @@ async def list_agent_tasks(
             setattr(task, "tokens_used", max(int(task.tokens_used or 0), int(task_runtime_stats["tokens_used"])))
         setattr(task, "runtime_session_id", runtime_session_ids.get(task.id))
         setattr(task, "finding_runtime_stack", _resolve_task_runtime_stack(task.agent_config))
+        setattr(task, "discovery_v2", (task.agent_config or {}).get("discovery_v2"))
         setattr(task, "finding_outcome", runtime_result["finding_outcome"])
         setattr(task, "runtime_completion_mode", runtime_result["runtime_completion_mode"])
         setattr(task, "finalized_findings_count", runtime_result["finalized_findings_count"])
@@ -2756,6 +2791,7 @@ async def get_agent_task(
         "total_files": task.total_files or 0,
         "indexed_files": task.indexed_files or 0,
         "analyzed_files": task.analyzed_files or 0,
+        "coverage": task.coverage,
         "total_chunks": task.total_chunks or 0,
         "total_iterations": total_iterations,
         "tool_calls_count": tool_calls_count,
@@ -2778,6 +2814,7 @@ async def get_agent_task(
         "error_message": task.error_message,
         "runtime_session_id": runtime_session_ids.get(task.id),
         "finding_runtime_stack": _resolve_task_runtime_stack(task.agent_config),
+        "discovery_v2": (task.agent_config or {}).get("discovery_v2"),
         "finding_outcome": runtime_result["finding_outcome"],
         "runtime_completion_mode": runtime_result["runtime_completion_mode"],
         "finalized_findings_count": runtime_result["finalized_findings_count"],

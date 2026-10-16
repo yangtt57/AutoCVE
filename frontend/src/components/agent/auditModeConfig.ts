@@ -16,22 +16,22 @@ export interface AuditModeOption {
 export const AUDIT_MODE_OPTIONS: AuditModeOption[] = [
 	{
 		mode: "enhanced_scan",
-		label: "增强扫描",
-		description: "传统工具扫描+模型验证",
-		workflow: "Orchestrator -> Recon -> Scan -> Triage",
+		label: "快速扫描",
+		description: "规则扫描与告警研判，适合快速检查",
+		workflow: "规则扫描 → 逐项研判",
 	},
 	{
 		mode: "intelligent_audit",
-		label: "智能审计",
-		recommended: true,
-		description: "Agent自主审计",
-		workflow: "Orchestrator -> Recon -> Finding",
+		label: "深入分析",
+		description: "Agent 自主阅读源码，适合业务逻辑检查",
+		workflow: "源码导航 → 业务与权限分析",
 	},
 	{
 		mode: "comprehensive_audit",
-		label: "综合审计",
-		description: "增强扫描+智能审计",
-		workflow: "Orchestrator -> Recon -> Scan → Triage + Finding",
+		label: "全面审计",
+		recommended: true,
+		description: "结合独立分析与规则扫描，保留更多线索",
+		workflow: "独立发现 + 规则扫描 → 反馈研判",
 	},
 ];
 

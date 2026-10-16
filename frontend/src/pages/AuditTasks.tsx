@@ -30,9 +30,11 @@ import {
 import { api } from "@/shared/config/database";
 import { apiClient } from "@/shared/api/serverClient";
 import type { AuditTask } from "@/shared/types";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import CreateTaskDialog from "@/components/audit/CreateTaskDialog";
+import CreateAgentTaskDialog from "@/components/agent/CreateAgentTaskDialog";
+import { downloadDiscovery } from "@/shared/api/discovery";
 import TerminalProgressDialog from "@/components/audit/TerminalProgressDialog";
 import ExportReportDialog from "@/components/reports/ExportReportDialog";
 import { calculateTaskProgress } from "@/shared/utils/utils";
@@ -46,13 +48,13 @@ import {
 import ReportExportDialog from "@/pages/AgentAudit/components/ReportExportDialog";
 
 // Zombie task detection config
+const ACTIVE_AGENT_STATUSES = ["pending", "running", "initializing", "planning", "indexing", "analyzing", "verifying", "reporting"];
 const ZOMBIE_TIMEOUT = 180000; // 3 minutes without progress is potentially stuck
 
 // 任务类型标签
 type TaskTab = "regular" | "agent";
 
 export default function AuditTasks() {
-	const navigate = useNavigate();
 	const activeTab = "agent" as TaskTab;
 
 	// 普通任务状态
@@ -61,6 +63,7 @@ export default function AuditTasks() {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState<string>("all");
 	const [showCreateDialog, setShowCreateDialog] = useState(false);
+	const [showAgentCreateDialog, setShowAgentCreateDialog] = useState(false);
 	const [cancellingTaskId, setCancellingTaskId] = useState<string | null>(null);
 	const [showTerminal, setShowTerminal] = useState(false);
 	const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
@@ -117,7 +120,7 @@ export default function AuditTasks() {
 	// Silently update active tasks progress (no loading state trigger)
 	useEffect(() => {
 		const activeTasks = tasks.filter(
-			(task) => task.status === "running" || task.status === "pending",
+			(task) => ACTIVE_AGENT_STATUSES.includes(task.status),
 		);
 
 		if (activeTasks.length === 0) {
@@ -197,7 +200,7 @@ export default function AuditTasks() {
 	// 自动刷新Agent任务（静默更新，不显示 loading）
 	useEffect(() => {
 		const activeAgentTasks = agentTasks.filter(
-			(task) => task.status === "running" || task.status === "pending",
+			(task) => ACTIVE_AGENT_STATUSES.includes(task.status),
 		);
 
 		if (activeAgentTasks.length === 0) return;
@@ -260,6 +263,10 @@ export default function AuditTasks() {
 	const handleOpenAgentExportDialog = async (task: AgentTask) => {
 		try {
 			setExportingTaskId(task.id);
+			if (task.discovery_v2?.enabled) {
+				await downloadDiscovery(task.id, "export");
+				return;
+			}
 			// 获取任务的 findings 列表
 			const findings = await getAgentFindings(task.id);
 			setExportAgentTask(task);
@@ -293,6 +300,8 @@ export default function AuditTasks() {
 
 	const getStatusBadge = (status: string) => {
 		switch (status) {
+			case "partial":
+				return <Badge className="bg-amber-100 text-amber-800">部分完成</Badge>;
 			case "completed":
 				return <Badge className="cyber-badge-success">完成</Badge>;
 			case "running":
@@ -308,6 +317,8 @@ export default function AuditTasks() {
 
 	const getStatusIcon = (status: string) => {
 		switch (status) {
+			case "partial":
+				return <AlertTriangle className="w-4 h-4 text-amber-500" />;
 			case "completed":
 				return <CheckCircle className="w-4 h-4 text-emerald-400" />;
 			case "running":
@@ -336,7 +347,7 @@ export default function AuditTasks() {
 			task.project?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
 			task.task_type.toLowerCase().includes(searchTerm.toLowerCase());
 		const matchesStatus =
-			statusFilter === "all" || task.status === statusFilter;
+			statusFilter === "all" || task.status === statusFilter || (statusFilter === "running" && ACTIVE_AGENT_STATUSES.includes(task.status));
 		return matchesSearch && matchesStatus;
 	});
 
@@ -345,7 +356,7 @@ export default function AuditTasks() {
 			(task.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
 			task.task_type.toLowerCase().includes(searchTerm.toLowerCase());
 		const matchesStatus =
-			statusFilter === "all" || task.status === statusFilter;
+			statusFilter === "all" || task.status === statusFilter || (statusFilter === "running" && ACTIVE_AGENT_STATUSES.includes(task.status));
 		return matchesSearch && matchesStatus;
 	});
 
@@ -360,7 +371,7 @@ export default function AuditTasks() {
 	const agentStats = {
 		total: agentTasks.length,
 		completed: agentTasks.filter((t) => t.status === "completed").length,
-		running: agentTasks.filter((t) => t.status === "running").length,
+		running: agentTasks.filter((t) => ACTIVE_AGENT_STATUSES.includes(t.status)).length,
 		failed: agentTasks.filter((t) => t.status === "failed").length,
 	};
 
@@ -383,9 +394,8 @@ export default function AuditTasks() {
 	}
 
 	return (
-		<div className="space-y-6 p-6 cyber-bg-elevated min-h-screen font-mono relative">
-			{/* Grid background */}
-			<div className="absolute inset-0 cyber-grid-subtle pointer-events-none" />
+		<div className="space-y-6 min-w-0 relative">
+			<header><h1 className="text-2xl font-semibold">审计任务</h1><p className="mt-2 text-sm text-muted-foreground">跟进任务进度，核查发现与实际覆盖范围。</p></header>
 
 			{/* Stats Cards */}
 			<div className="grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
@@ -446,7 +456,7 @@ export default function AuditTasks() {
 						<Input
 							placeholder={
 								activeTab === "agent"
-									? "搜索Agent任务名称..."
+									? "搜索任务名称…"
 									: "搜索项目名称或任务类型..."
 							}
 							value={searchTerm}
@@ -466,10 +476,10 @@ export default function AuditTasks() {
 					{activeTab === "agent" && (
 						<Button
 							className="cyber-btn-primary h-10"
-							onClick={() => navigate("/")}
+							onClick={() => setShowAgentCreateDialog(true)}
 						>
 							<Bot className="w-4 h-4 mr-2" />
-							新建Agent审计
+							新建审计
 						</Button>
 					)}
 					<div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
@@ -494,6 +504,7 @@ export default function AuditTasks() {
 						>
 							已完成
 						</Button>
+						{activeTab === "agent" && <Button size="sm" onClick={() => setStatusFilter("partial")} className={`h-10 ${statusFilter === "partial" ? "bg-amber-100 text-amber-800" : "cyber-btn-outline"}`}>部分完成</Button>}
 						<Button
 							size="sm"
 							onClick={() => setStatusFilter("failed")}
@@ -543,7 +554,7 @@ export default function AuditTasks() {
 													{task.name || "Agent审计任务"}
 												</h3>
 												<p className="text-sm text-muted-foreground font-mono">
-													{task.current_phase || task.task_type}
+													{{ planning: "准备任务", indexing: "源码索引", reconnaissance: "项目分析", analysis: "源码审计", verification: "动态验证", reporting: "结果整理" }[task.current_phase || ""] || "源码审计"}
 												</p>
 											</div>
 										</div>
@@ -567,15 +578,15 @@ export default function AuditTasks() {
 												{task.total_files}
 											</p>
 											<p className="text-xs text-muted-foreground uppercase">
-												文件数
+												文件总数
 											</p>
 										</div>
 										<div className="text-center p-3 bg-muted rounded-lg border border-border">
 											<p className="text-2xl font-bold text-foreground">
-												{task.analyzed_files}
+												{task.coverage?.read_file_count ?? "未记录"}
 											</p>
 											<p className="text-xs text-muted-foreground uppercase">
-												已分析
+												实际已读
 											</p>
 										</div>
 										<div className="text-center p-3 bg-muted rounded-lg border border-border">
@@ -583,7 +594,7 @@ export default function AuditTasks() {
 												{task.findings_count}
 											</p>
 											<p className="text-xs text-muted-foreground uppercase">
-												发现问题
+												{task.discovery_v2?.enabled ? "静态支持候选" : "发现问题"}
 											</p>
 										</div>
 										<div className="text-center p-3 bg-muted rounded-lg border border-border">
@@ -596,35 +607,35 @@ export default function AuditTasks() {
 										</div>
 										<div className="text-center p-3 bg-muted rounded-lg border border-border">
 											<p className="text-2xl font-bold text-primary">
-												{task.security_score?.toFixed(1) || "-"}
+												{task.coverage?.scanned_file_count ?? "未记录"}
 											</p>
 											<p className="text-xs text-muted-foreground uppercase">
-												安全评分
+												规则扫描文件
 											</p>
 										</div>
 									</div>
 
 									{/* Severity Distribution */}
-									{task.findings_count > 0 && (
+									{!task.discovery_v2?.enabled && task.findings_count > 0 && (
 										<div className="flex gap-4 mb-4 font-mono text-xs">
 											{task.critical_count > 0 && (
 												<span className="text-rose-500">
-													Critical: {task.critical_count}
+													严重： {task.critical_count}
 												</span>
 											)}
 											{task.high_count > 0 && (
 												<span className="text-orange-500">
-													High: {task.high_count}
+													高危： {task.high_count}
 												</span>
 											)}
 											{task.medium_count > 0 && (
 												<span className="text-yellow-500">
-													Medium: {task.medium_count}
+													中危： {task.medium_count}
 												</span>
 											)}
 											{task.low_count > 0 && (
 												<span className="text-green-500">
-													Low: {task.low_count}
+													低危： {task.low_count}
 												</span>
 											)}
 										</div>
@@ -634,11 +645,11 @@ export default function AuditTasks() {
 									<div className="mb-4 font-mono">
 										<div className="flex items-center justify-between mb-2">
 											<span className="text-sm font-bold text-muted-foreground uppercase">
-												审计进度
+												流程进度
 											</span>
 											<span className="text-sm text-muted-foreground">
-												{task.analyzed_files || 0} / {task.total_files || 0}{" "}
-												文件
+												{task.coverage?.read_file_count ?? "未记录"} / {task.coverage?.total_files ?? task.total_files ?? 0}{" "}
+												文件已读
 											</span>
 										</div>
 										<Progress
@@ -647,7 +658,7 @@ export default function AuditTasks() {
 										/>
 										<div className="text-right mt-1">
 											<span className="text-xs text-muted-foreground">
-												{(task.progress_percentage || 0).toFixed(0)}% 完成
+												{(task.progress_percentage || 0).toFixed(0)}% · 不代表源码覆盖率
 											</span>
 										</div>
 									</div>
@@ -701,7 +712,7 @@ export default function AuditTasks() {
 													</Button>
 												</>
 											)}
-											{(task.status === "completed" ||
+											{(task.discovery_v2?.enabled || task.status === "completed" ||
 												(task.findings_count != null &&
 													task.findings_count > 0)) && (
 												<Button
@@ -713,7 +724,7 @@ export default function AuditTasks() {
 													<Download className="w-4 h-4 mr-2" />
 													{exportingTaskId === task.id
 														? "加载中..."
-														: "导出报告"}
+														: task.discovery_v2?.enabled ? "导出账本" : "导出报告"}
 												</Button>
 											)}
 											{task.runtime_session_id && (
@@ -752,7 +763,7 @@ export default function AuditTasks() {
 							{!searchTerm && statusFilter === "all" && (
 								<Button
 									className="cyber-btn-primary"
-									onClick={() => navigate("/")}
+									onClick={() => setShowAgentCreateDialog(true)}
 								>
 									<Bot className="w-4 h-4 mr-2" />
 									创建Agent审计
@@ -807,7 +818,7 @@ export default function AuditTasks() {
 												{task.total_files}
 											</p>
 											<p className="text-xs text-muted-foreground uppercase">
-												文件数
+												文件总数
 											</p>
 										</div>
 										<div className="text-center p-3 bg-muted rounded-lg border border-border">
@@ -859,7 +870,7 @@ export default function AuditTasks() {
 													task.scanned_files,
 													task.total_files,
 												)}
-												% 完成
+												% · 不代表源码覆盖率
 											</span>
 										</div>
 									</div>
@@ -953,6 +964,7 @@ export default function AuditTasks() {
 			)}
 
 			{/* Create Task Dialog */}
+			<CreateAgentTaskDialog open={showAgentCreateDialog} onOpenChange={setShowAgentCreateDialog} />
 			<CreateTaskDialog
 				open={showCreateDialog}
 				onOpenChange={setShowCreateDialog}

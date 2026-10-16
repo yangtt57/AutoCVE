@@ -84,6 +84,24 @@ async def lifespan(app: FastAPI):
     else:
         logger.info("  - Agent 核心服务检查通过")
 
+    # 上一次进程留下的进行中验证要收尾，否则前端会一直显示「验证中」。
+    # 能抢救的（Agent 其实已经跑完、只是没人读证据）直接落库，其余如实标记失败。
+    if bool(getattr(settings, "VERIFICATION_AGENT_ENABLED", False)):
+        try:
+            from app.services.verification_agent.runner import (
+                reconcile_interrupted_verifications,
+            )
+
+            counts = await reconcile_interrupted_verifications()
+            if counts["recovered"] or counts["failed"]:
+                logger.info(
+                    "  - 已收尾中断的动态验证：抢救 %s 条、标记失败 %s 条",
+                    counts["recovered"],
+                    counts["failed"],
+                )
+        except Exception as e:  # pragma: no cover - 收尾失败不能拖垮启动
+            logger.warning(f"  - 动态验证收尾跳过: {e}")
+
     logger.info("=" * 50)
     logger.info("AutoCVE 后端服务已启动")
     logger.info(f"API 文档: http://localhost:8000/docs")

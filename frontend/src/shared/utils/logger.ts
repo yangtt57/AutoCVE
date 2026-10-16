@@ -15,6 +15,7 @@ export enum LogCategory {
     USER_ACTION = 'USER_ACTION',      // 用户操作
     API_CALL = 'API_CALL',            // API调用
     SYSTEM = 'SYSTEM',                // 系统事件
+    PERFORMANCE = 'PERFORMANCE',      // 请求性能
     CONSOLE_ERROR = 'CONSOLE_ERROR',  // 控制台错误
 }
 

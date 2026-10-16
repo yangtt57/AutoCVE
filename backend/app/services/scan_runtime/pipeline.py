@@ -23,6 +23,13 @@ class ScanPipeline:
         self.store = store or ScanResultStore(self.project_root)
         self.event_sink = event_sink
 
+    async def run_discovery(self, *, run_id, artifact_root, session_factory=None):
+        """V2 keeps raw artifacts outside the source mount and indexes every occurrence."""
+        from app.services.discovery.scanners import ScannerAdapter
+
+        return await ScannerAdapter().run(pipeline=self, run_id=run_id, artifact_root=artifact_root,
+                                         session_factory=session_factory)
+
     async def run(
         self,
         *,

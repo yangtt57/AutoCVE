@@ -282,6 +282,7 @@ class OrchestratorAgent(BaseAgent):
         scan_data = {
             **pipeline_result,
             "raw_findings": [],
+            "partial": any(status != "success" for status in pipeline_result.get("summary", {}).get("scanner_statuses", {}).values()),
         }
         handoff = self._build_scan_handoff(scan_data)
         result = AgentResult(success=True, data=scan_data, metadata={"runtime_stack": "deterministic"}, handoff=handoff)
@@ -387,6 +388,7 @@ class OrchestratorAgent(BaseAgent):
         max_turns = self._triage_runtime_turn_limit(config)
         total_count = int(initial_coverage.get("total_count") or 0)
         max_batches = max(1, (total_count + 4) // 5 + 5)
+        remaining_turns = int(config.get("max_iterations") or 50)
         batch_runs: List[Dict[str, Any]] = []
 
         await self.emit_event(
@@ -399,6 +401,8 @@ class OrchestratorAgent(BaseAgent):
                 raise asyncio.CancelledError("Task cancelled during runtime triage.")
             coverage = queue.coverage_summary()
             if coverage.get("is_complete"):
+                break
+            if remaining_turns <= 0:
                 break
             await self.emit_event(
                 "thinking",
@@ -415,8 +419,9 @@ class OrchestratorAgent(BaseAgent):
                     "call GetScanFinding for every returned finding_id, inspect source context with Read/Grep/Glob, "
                     "then call FinalizeTriageBatch covering every finding_id in that batch."
                 ),
-                max_turns=max_turns,
+                max_turns=min(max_turns, remaining_turns),
             )
+            remaining_turns -= max(1, int(batch_result.get("turn_count") or 1))
             batch_runs.append(
                 {
                     "batch_number": batch_number,
@@ -426,41 +431,15 @@ class OrchestratorAgent(BaseAgent):
                     "tool_call_count": batch_result.get("tool_call_count"),
                 }
             )
-        else:
-            coverage = queue.coverage_summary()
-            if not coverage.get("is_complete"):
-                return AgentResult(
-                    success=False,
-                    error="Runtime triage did not complete all scan findings within the batch limit.",
-                    data={"findings": [], "coverage": coverage, "batch_runs": batch_runs},
-                    metadata={"runtime_stack": "runtime"},
-                )
-
-        final_result = await bridge.run(
-            project_id=project_id,
-            task_id=task_id,
-            system_prompt=TRIAGE_RUNTIME_SYSTEM_PROMPT,
-            recon_payload=runtime_payload,
-            user_message=(
-                "All queued scan findings have been processed. Call FinalizeTriage now to return the final "
-                "triage findings and summary. Do not claim another batch."
-            ),
-            max_turns=max(3, min(max_turns, 6)),
+        # The durable queue is authoritative; another model finalizer must not
+        # replace already persisted decisions with an empty/incomplete response.
+        complete = queue.coverage_summary().get("is_complete")
+        triage_data = queue.finalize_triage(
+            require_complete=False,
+            summary=None if complete else "Triage budget exhausted; completed findings retained, remaining alerts stay in the queue.",
         )
-        final_payload = final_result.get("final_payload") if isinstance(final_result, dict) else {}
-        triage_data = dict(final_payload or {})
-        triage_data.setdefault("findings", [])
-        triage_data.setdefault("summary", "Runtime triage completed.")
+        triage_data["partial"] = not complete
         triage_data["batch_runs"] = batch_runs
-        triage_data["final_session_id"] = final_result.get("session_id")
-        triage_data["coverage"] = triage_data.get("coverage") or queue.coverage_summary()
-        if triage_data.get("requires_retry"):
-            return AgentResult(
-                success=False,
-                error="Runtime triage did not return a finalized payload.",
-                data=triage_data,
-                metadata={"runtime_stack": "runtime", "batch_count": len(batch_runs)},
-            )
         handoff = self._build_triage_handoff(triage_data)
         result = AgentResult(
             success=True,
@@ -686,6 +665,18 @@ class OrchestratorAgent(BaseAgent):
         start_time = time.time()
         project_info = input_data.get("project_info", {})
         config = input_data.get("config", {})
+        if (config.get("discovery_v2") or {}).get("enabled"):
+            from app.services.discovery.scheduler import DiscoveryScheduler
+
+            async def discovery_event(event):
+                await self.emit_event("info", event.get("message", f"Discovery {event['phase']}"), metadata=event)
+
+            finding = self.sub_agents.get("finding")
+            data = await DiscoveryScheduler(
+                llm_service=getattr(finding, "llm_service", self.llm_service),
+                sandbox_manager=self._resolve_sandbox_manager(), event_sink=discovery_event,
+            ).run(input_data)
+            return AgentResult(success=True, data=data, tokens_used=data.get("tokens_used", 0))
         self._runtime_context = {
             "project_info": project_info,
             "config": config,
@@ -903,6 +894,8 @@ class OrchestratorAgent(BaseAgent):
                 success=True,
                 data={
                     "findings": final_findings,
+                    "partial": bool((isinstance(triage_result.data, dict) and triage_result.data.get("partial"))
+                                    or (isinstance(scan_result.data, dict) and scan_result.data.get("partial"))),
                     "verification_candidates": verification_candidates,
                     "raw_findings": scan_result.data.get("raw_findings", []) if scan_result.success and isinstance(scan_result.data, dict) else [],
                     "summary": summary,

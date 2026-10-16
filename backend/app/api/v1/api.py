@@ -1,7 +1,9 @@
 ﻿from fastapi import APIRouter
-from app.api.v1.endpoints import auth, users, projects, tasks, scan, members, config, database, prompts, rules, agent_tasks, embedding_config, ssh_keys, skills, report_templates, audit_sessions, agent_direct_audit, vulnerabilities, checkmarx, one_click_cve
+from app.api.v1.endpoints import auth, users, projects, tasks, scan, members, config, database, prompts, rules, agent_tasks, embedding_config, ssh_keys, skills, report_templates, audit_sessions, agent_direct_audit, vulnerabilities, checkmarx, one_click_cve, vulnerability_verifications
 
 api_router = APIRouter()
+from app.api.v1.endpoints import discovery
+api_router.include_router(discovery.router, prefix="/discovery", tags=["discovery-v2"])
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(projects.router, prefix="/projects", tags=["projects"])
@@ -22,3 +24,8 @@ api_router.include_router(report_templates.router, prefix="/report-templates", t
 api_router.include_router(vulnerabilities.router, prefix='/vulnerabilities', tags=['vulnerabilities'])
 api_router.include_router(checkmarx.router, prefix="/checkmarx", tags=["checkmarx"])
 api_router.include_router(one_click_cve.router, prefix="/one-click-cve", tags=["one-click-cve"])
+api_router.include_router(
+    vulnerability_verifications.router,
+    prefix="/vulnerabilities",
+    tags=["vulnerability-verifications"],
+)

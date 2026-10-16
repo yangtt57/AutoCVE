@@ -591,7 +591,12 @@ def build_runtime_tool_registry(
     user_id: str | None = None,
     include_finding_finalizer: bool = True,
     include_report_finalizer: bool = False,
+    discovery_context: dict | None = None,
 ) -> ToolRegistry:
+    if discovery_context is not None:
+        from app.services.discovery.tools import build_discovery_tools
+
+        return build_discovery_tools(**discovery_context)
     tools: list[RuntimeTool] = []
 
     read_tool = agent_tools.get("read_file")

@@ -1,0 +1,46 @@
+name: Platform compatibility
+on:
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'docker/**'
+      - '*compose*.yml'
+      - 'backend/Dockerfile'
+      - 'backend/pyproject.toml'
+      - 'backend/uv.lock'
+      - 'frontend/Dockerfile'
+      - 'frontend/package.json'
+      - 'frontend/pnpm-lock.yaml'
+      - '.github/workflows/platform-compatibility.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scripts:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s scripts/tests -v
+
+  linux-images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t autocve-backend:compat backend
+      - name: Check parser, streaming ingestion and PDF dependencies on Linux
+        run: >-
+          docker run --rm --network none --entrypoint python autocve-backend:compat
+          -c 'import ijson, arq, psycopg; from tree_sitter_language_pack import get_language;
+          get_language("java"); from weasyprint import HTML;
+          assert HTML(string="<p>中文报告</p>").write_pdf().startswith(b"%PDF")'
+      - run: docker build -t autocve-frontend:compat frontend
+      - run: docker run --rm --network none --add-host backend:127.0.0.1 autocve-frontend:compat nginx -t
+      - run: docker build -t autocve-verifier-dind:compat docker/verifier-dind

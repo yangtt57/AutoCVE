@@ -92,6 +92,10 @@ async def init_skill_bindings() -> List[str]:
 
     for slug in SkillFileService.list_skill_slugs():
         normalized_slug = SkillFileService.slugify(slug)
+        if SkillFileService.read_skill(slug).get("metadata_json", {}).get("runtime") in {"discovery_v2", "import_review"}:
+            # These packages have a pinned, per-work-package capability boundary.
+            # Do not automatically enable them in legacy conversational sessions.
+            continue
         if not _binding_exists(AUDIT_CHAT_AGENT_TYPE, normalized_slug):
             SkillFileService.upsert_binding(
                 AUDIT_CHAT_AGENT_TYPE,

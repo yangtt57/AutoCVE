@@ -23,11 +23,13 @@ export interface AgentTask {
   repository_url_snapshot?: string | null;
   runtime_session_id?: string | null;
   finding_runtime_stack?: string | null;
+  discovery_v2?: { enabled: boolean } | null;
 
   // 缁熻
   total_files: number;
   indexed_files: number;
   analyzed_files: number;
+  coverage?: { basis: string; read_file_count?: number | null; total_files?: number; scanned_file_count?: number | null; checked_check_count?: number; can_resume?: boolean };
   files_with_findings: number;  // 鏈夋紡娲炲彂鐜扮殑鏂囦欢鏁?
   total_chunks: number;
   findings_count: number;
@@ -196,6 +198,7 @@ export interface CreateAgentTaskRequest {
   token_budget?: number;
   timeout_seconds?: number;
   finding_runtime_stack?: "legacy" | "runtime";
+  discovery_v2?: { enabled: boolean; worker_concurrency?: number; max_feedback_rounds?: number };
 }
 
 export interface AgentTaskSummary {

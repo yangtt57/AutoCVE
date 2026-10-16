@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import hashlib
+import posixpath
 from typing import Any
-
 
 SEVERITY_MAP = {
     "ERROR": "high",
@@ -23,8 +23,10 @@ def normalize_semgrep_results(
     payload: dict[str, Any],
     *,
     artifact_ref: str,
-    max_index_findings: int = 200,
+    max_index_findings: int | None = None,
 ) -> list[dict[str, Any]]:
+    # Kept as an accepted legacy argument. Limits belong to review batches/UI pages,
+    # never ingestion: a late high-severity result must remain available for review.
     raw_results = payload.get("results") if isinstance(payload, dict) else []
     if not isinstance(raw_results, list):
         return []
@@ -52,6 +54,7 @@ def normalize_semgrep_results(
                     file_path=file_path,
                     line_start=line_start,
                     code_snippet=code_snippet,
+                    occurrence=raw_index,
                 ),
                 "source_tool": "SemgrepScan",
                 "rule_id": rule_id,
@@ -68,8 +71,6 @@ def normalize_semgrep_results(
                 "status": "pending",
             }
         )
-        if len(indexed) >= max_index_findings:
-            break
     return indexed
 
 
@@ -89,13 +90,14 @@ def _priority(*, severity: str, file_path: str, metadata: Any) -> int:
     return max(0, min(100, priority))
 
 
-def _finding_id(*, source_tool: str, rule_id: str, file_path: str, line_start: int, code_snippet: str) -> str:
+def _finding_id(*, source_tool: str, rule_id: str, file_path: str, line_start: int, code_snippet: str, occurrence: int = 0) -> str:
     fingerprint = "|".join(
         [
             source_tool,
             rule_id,
             file_path,
             str(line_start),
+            str(occurrence),
             hashlib.sha256(code_snippet.encode("utf-8", errors="ignore")).hexdigest()[:16],
         ]
     )
@@ -103,7 +105,10 @@ def _finding_id(*, source_tool: str, rule_id: str, file_path: str, line_start: i
 
 
 def _normalize_path(path: str) -> str:
-    return path.replace("\\", "/").lstrip("./")
+    normalized = posixpath.normpath(path.replace("\\", "/"))
+    if normalized.startswith("/") or normalized == ".." or normalized.startswith("../"):
+        raise ValueError("Scanner path escapes source snapshot")
+    return normalized
 
 
 def _as_int(value: Any, *, default: int) -> int:

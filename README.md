@@ -1,266 +1,134 @@
-<div align="center">
+# AutoCVE · 源码审计增强版
 
-# AutoCVE - 一键挖掘 CVE，筛项目、审源码、验漏洞、出报告，全流程自动化
+本仓库是 [yangtt57/AutoCVE](https://github.com/yangtt57/AutoCVE)，**基于 [larlarua/AutoCVE](https://github.com/larlarua/AutoCVE) 修改**，初始基线为 [`b26025f`](https://github.com/larlarua/AutoCVE/commit/b26025f27199ba2d93145e4a08fc9015e8d846e4)。感谢原作者与贡献者提供的 Agent 审计、项目管理、一键 CVE、漏洞管理和报告能力。
 
-<img src="./docs/assets/image/logo.png" alt="AutoCVE Logo" width="72%">
+本 fork 在这些能力上增加源码发现与覆盖账本、多语言入口分析、专业 Skills、独立的 Pi Docker 动态验证，并简化界面、适配 Linux / macOS 部署。原项目公布的 CVE 成果属于上游成果；本 fork 尚未测量漏洞检出率或误报率提升。
 
+[English](README_EN.md) · [完整改动说明](docs/FORK_CHANGES.md) · [Linux / macOS 部署](docs/LINUX_DEPLOYMENT.md) · [本地开发](docs/LOCAL_DEVELOPMENT.md)
 
-[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python\&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi\&logoColor=white)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react\&logoColor=white)](https://react.dev/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql\&logoColor=white)](https://www.postgresql.org/)
+![AutoCVE 工作台](docs/screenshots/autocve-workbench.jpg)
 
-<br>
+## 在原版基础上增加了什么
 
-<p align="center">
-  <img src="./docs/assets/GIF/demo.gif" alt="AutoCVE Demo" width="72%">
-</p>
+| 部分 | 本 fork 的新增与改进 |
+| --- | --- |
+| 源码发现 v2 | 独立源码分析与 Semgrep 扫描并行，首轮结果冻结后再反馈研判；保存候选历史、证据、反证和待处理工作，支持继续审计与 JSONL 导出 |
+| 扫描结果保存 | 完整保存原始产物和可解析的每条 occurrence，取消前 200 条索引截断；模型按预算分批研判，未处理告警继续保留 |
+| 多语言分析 | 补充 Java、Go、C#、PHP、Ruby、Rust、Kotlin、Swift、C/C++，并增强 Python、JS/TS 的符号、调用表达式和框架入口导航 |
+| 入口与信任边界 | 按 Web/API、库/SDK、CLI、后台任务等场景拆分工作包，沿输入、身份、租户、对象权限和敏感操作组织分析 |
+| 专业 Skills | 18 个固定版本适配包，来源于 Trail of Bits、Cloudflare、Sentry；按场景读取，记录实际使用的文件、行范围、哈希和来源 |
+| 独立动态验证 | Pi Agent 在 Docker 中实际搭建目标并执行 PoC；通过专用 DinD 运行被测服务，保存 stdout/stderr、HTTP 交互、产物与判定，支持暂停/继续和重启收尾 |
+| 覆盖与界面 | 区分流程进度、扫描数量和实际源码阅读；增加候选筛选、带行号的源码证据与版本历史，统一简洁的浅色界面 |
+| 跨平台部署 | 统一 Linux / macOS 脚本，识别 Docker context/socket；移除固定的 Mac 网络设置，锁定依赖并补齐多语言解析、中文 PDF 和平台回归 |
 
-[📚 项目文档](#-项目文档) ·
-[✨ 核心能力](#-核心能力) ·
-[🚀 快速开始](#-快速开始) ·
-[🏆 CVE 成果](#-cve-挖掘成果)
+框架识别与同名调用导航属于辅助线索，不能替代完整调用图或运行验证。详细边界、文件入口和第三方来源见 [改动说明](docs/FORK_CHANGES.md)。
 
-<p>
-  <strong>简体中文</strong> | <a href="./README_EN.md">English</a>
-</p>
+## 安装：从本 fork 源码构建
 
-</div>
+准备 Git、Docker 和 Docker Compose **2.24+**。Linux 使用 Docker Engine；macOS 可使用 Docker Desktop 或 Colima。主应用和验证环境均运行在 Linux 容器中。独立 Pi 验证使用 privileged DinD，部署与资源要求见 [平台说明](docs/LINUX_DEPLOYMENT.md)。
 
----
-
-## 📚 项目文档
-
-### 📖 [用户使用手册](./docs/USER_GUIDE.md)
-
-涵盖环境部署、模型配置、项目导入、Agent 审计、一键 CVE、漏洞管理和 Skills 管理完整使用说明，并提供各功能界面预览。
-
-### 🏗️ [架构设计文档](./docs/ARCHITECTURE_DESIGN.md)
-
-介绍 AutoCVE 的整体架构、Agent 工作流、工具编排、权限保护、Agent Runtime 以及 ReAct Loop 状态机设计。
-
-### 🔌 [接口文档](./docs/API_DOCUMENTATION.md)
-
-提供后端 API、数据结构、请求参数及接口调试说明。
-
----
-
-## ✨ 核心能力
-
-### 🚀 一键完成 CVE 挖掘
-
-实现从项目筛选、仓库导入、审计任务创建、Agent 漏洞挖掘到 CVE 申报报告生成的全流程自动化。用户仅需复制报告内容并提交，即可完成后续 CVE 申请。
-
-### 🤖 Multi-Agent 协同审计
-
-通过 Orchestrator 统一调度 Recon、Scan、Triage、Finding 和 Verification 等 Agent，协同完成信息收集、工具扫描、误报过滤、漏洞深挖与动态验证。
-
-```mermaid
-flowchart LR
-    O["Orchestrator"] --> R["Recon"]
-    R --> S["Scan"]
-    S --> T["Triage"]
-    R --> F["Finding"]
-    T --> V["Verification"]
-    F --> V
-    V --> M["Merge / Finalize"]
-```
-
-### 🧩 三种审计模式
-
-根据不同审计目标灵活选择增强扫描、智能审计或综合审计，兼顾扫描效率、挖掘深度与审计覆盖范围。
-
-|     审计模式    |         核心 Agent        | 适用场景                        |
-| :---------: | :---------------------: | :-------------------------- |
-|  ⚡ **增强扫描** |      Scan → Triage      | 快速分析工具扫描结果并过滤误报             |
-| 🧠 **智能审计** |         Finding         | 深度挖掘高价值漏洞，适用于 CVE 和 0Day 研究 |
-| 🔍 **综合审计** | Scan → Triage + Finding | 融合工具扫描与源码分析，开展全量审计          |
-
-### 🎯 面向 CVE 挖掘的专用 Agent
-
-Finding Agent 是 AutoCVE 的核心审计能力，专为 CVE 挖掘场景设计。它可直接分析项目源码，并结合 ReAct Loop、专项工具调用、Nudge 纠偏及 `FinalizeFinding` 结构化终止机制，最终产出符合 CVE 申报条件的高价值漏洞。
-
-<details>
-<summary><strong>💬 交互式审计与全过程追踪</strong></summary>
-
-<br>
-
-* **支持用户交互**：将完整审计过程作为会话上下文，用户可围绕审计结果继续追问，让 Agent 补充证据、解释攻击链、完善复现步骤或扩展漏洞分析。
-* **可视化审计追踪**：集中展示活动日志、Agent Tree、工具调用、阶段进度、初步报告和审计会话，方便复盘每次审计的执行路径与关键过程。
-
-</details>
-
-<details>
-<summary><strong>🗂️ 智能漏洞管理与 Skills 扩展</strong></summary>
-
-<br>
-
-* **智能化漏洞管理**：审计发现的漏洞由 Agent 调用工具自动提交，经过去重后以结构化形式入库，并在漏洞管理模块中统一维护。
-* **专属 Skills 配置**：支持根据实际需求为不同 Agent 配置专属 Skills，灵活扩展各 Agent 的能力边界。
-
-</details>
-
----
-
-## 🚀 快速开始
-
-### ⚡ 一行命令部署
-
-无需克隆仓库，一行命令即可启动：
-
-Linux / macOS / Git Bash :
+### 1. 下载并配置
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/larlarua/AutoCVE/v1.0.5/docker-compose.prod.yml \
-  | docker compose -f - up -d
-```
-Windows PowerShell / CMD :
-```bash
-curl.exe -fsSL https://raw.githubusercontent.com/larlarua/AutoCVE/v1.0.5/docker-compose.prod.yml | docker compose -f - up -d
-```
-
-### 🛠️ 源码部署
-
-适用于本地开发、功能调试或二次开发：
-
-```bash
-git clone https://github.com/larlarua/AutoCVE.git
+git clone https://github.com/yangtt57/AutoCVE.git
 cd AutoCVE
-docker compose up -d --build
+cp .env.example .env
+cp backend/env.example backend/.env
 ```
 
-### 🌐 服务访问
+编辑配置后再启动：
 
-服务启动完成后，可通过以下地址访问：
+| 文件 | 必须填写或确认的配置 |
+| --- | --- |
+| `.env` | 新数据库设置 `POSTGRES_PASSWORD`；按需调整 `WEB_PORT` 等端口。已有数据卷的密码不会因修改此文件自动更新 |
+| `backend/.env` | `LLM_PROVIDER`、`LLM_API_KEY`、`LLM_MODEL`、`LLM_BASE_URL`；模型 ID 与服务商提供的一致 |
+| `backend/.env` | 将 `SECRET_KEY` 改成随机值，例如运行 `openssl rand -hex 32` 生成 |
 
-| 服务          | 访问地址                       | 用途           |
-| :---------- | :------------------------- | :----------- |
-| 🖥️ 前端      | http://localhost:3000      | AutoCVE 用户界面 |
-| ⚙️ 后端 API   | http://localhost:8000      | 后端接口服务       |
-| 📘 Swagger  | http://localhost:8000/docs | API 文档与接口调试  |
-| 🗄️ Adminer | http://localhost:8080      | 数据库管理        |
+Compose 会统一配置容器内数据库、Redis、存储和 Docker 地址。真实密钥放在本地 `.env`，不要写入示例文件或提交到 Git。
 
-> [!TIP]
-> **快速体验完整审计流程**
->
-> 配置模型 → 导入项目 → 创建审计任务 → 跟踪实时审计 → 管理漏洞 → 编辑或导出报告
+### 2. 构建并启动主服务
 
----
+```bash
+./scripts/check-platform.sh
+./scripts/compose.sh build backend frontend sandbox static-scanner
+./scripts/compose.sh up -d db redis backend agent-worker one-click-cve-worker frontend
+./scripts/compose.sh ps
+```
 
-## 🏆 CVE 挖掘成果
+后端启动时自动执行数据库迁移。首次构建需要下载依赖与扫描镜像；后续更新源码后重新构建即可。
 
-<p align="left">
-  <img src="https://img.shields.io/badge/CVE-30-success?style=for-the-badge" alt="30 CVEs">
-  <img src="https://img.shields.io/badge/Projects-14-blue?style=for-the-badge" alt="14 Projects">
-  <img src="https://img.shields.io/badge/Max%20CVSS-9.9-critical?style=for-the-badge" alt="Max CVSS 9.9">
-  <img src="https://img.shields.io/badge/Test%20Period-7%20Days-orange?style=for-the-badge" alt="7 Days">
-</p>
+- 网页：`http://localhost:3000`；Linux 服务器使用 `http://服务器地址:3000`。
+- API 文档：`http://localhost:8000/docs`；API 默认只绑定宿主回环地址。
+- 首次初始化包含管理员演示账号：`demo@example.com` / `demo123`。对外开放服务前，在账号设置中修改密码；初始化的演示数据不代表本 fork 的真实发现。
 
-> [!NOTE]
-> AutoCVE 在为期一周的测试中，共发现并提交了 **30 个安全漏洞**，覆盖 **14 个开源项目**。
->
-> 点击表格中的 CVE 编号可查看官方记录，完整漏洞报告收录于
-> **[larlarua/vulnerability-reports](https://github.com/larlarua/vulnerability-reports/)**。
+**请使用上述源码构建命令。** 仓库保留的 `docker-compose.prod*.yml` 指向上游 v1.0.5 镜像，不包含本 fork 新增功能。
 
-<details open>
-<summary><strong>🔍 查看 CVE 成果明细（30）</strong></summary>
+### 3. 启用独立 Pi 动态验证（可选）
 
-<br>
+先在 `backend/.env` 设置：
 
-| CVE 编号 | 项目 | 项目热度 | 漏洞类型 | CVSS | 漏洞内容 |
-|:---:|:---:|:---:|:---:|:----:|:----:|
-| [CVE-2026-40904](https://www.cve.org/CVERecord?id=CVE-2026-40904) |  Chartbrew  |   ![Stars](https://img.shields.io/github/stars/chartbrew/chartbrew?style=social)   | Improper Access Control | **8.1** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-40904/detail_en.md) |
-| [CVE-2026-40603](https://www.cve.org/CVERecord?id=CVE-2026-40603) |  Chartbrew  |   ![Stars](https://img.shields.io/github/stars/chartbrew/chartbrew?style=social)   | Improper Access Control | **6.5** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-40603/detail_en.md) |
-| [CVE-2026-40601](https://www.cve.org/CVERecord?id=CVE-2026-40601) |  Chartbrew  |   ![Stars](https://img.shields.io/github/stars/chartbrew/chartbrew?style=social)   | Missing Authorization   | **7.5** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-40601/detail_en.md) |
-| [CVE-2026-40600](https://www.cve.org/CVERecord?id=CVE-2026-40600) |  Chartbrew  |   ![Stars](https://img.shields.io/github/stars/chartbrew/chartbrew?style=social)   | Improper Access Control | **8.1** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-40600/detail_en.md) |
-| [CVE-2026-40595](https://www.cve.org/CVERecord?id=CVE-2026-40595) |  Chartbrew  |   ![Stars](https://img.shields.io/github/stars/chartbrew/chartbrew?style=social)   | Improper Access Control | **7.5** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-40595/detail_en.md) |
-| [CVE-2026-42181](https://www.cve.org/CVERecord?id=CVE-2026-42181) |    Lemmy    |      ![Stars](https://img.shields.io/github/stars/LemmyNet/lemmy?style=social)     | SSRF                    | **6.5** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-42181/detail_en.md) |
-| [CVE-2026-42180](https://www.cve.org/CVERecord?id=CVE-2026-42180) |    Lemmy    |      ![Stars](https://img.shields.io/github/stars/LemmyNet/lemmy?style=social)     | SSRF                    | **6.3** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-42180/detail_en.md) |
-|  [CVE-2026-7290](https://www.cve.org/CVERecord?id=CVE-2026-7290)  |  JeecgBoot  |   ![Stars](https://img.shields.io/github/stars/jeecgboot/JeecgBoot?style=social)   | SQL Injection           | **6.3** |  [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-7290/detail_en.md) |
-|  [CVE-2026-7291](https://www.cve.org/CVERecord?id=CVE-2026-7291)  |     o2oa    |        ![Stars](https://img.shields.io/github/stars/o2oa/o2oa?style=social)        | SSRF                    | **6.3** |  [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-7291/detail_en.md) |
-|  [CVE-2026-7292](https://www.cve.org/CVERecord?id=CVE-2026-7292)  |     o2oa    |        ![Stars](https://img.shields.io/github/stars/o2oa/o2oa?style=social)        | RCE                     | **5.6** |  [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-7292/detail_en.md) |
-|  [CVE-2026-7303](https://www.cve.org/CVERecord?id=CVE-2026-7303)  |   xxl-job   |     ![Stars](https://img.shields.io/github/stars/xuxueli/xxl-job?style=social)     | Improper Access Control | **3.7** |   [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-7303/detail.md)   |
-|  [CVE-2026-7305](https://www.cve.org/CVERecord?id=CVE-2026-7305)  |   xxl-job   |     ![Stars](https://img.shields.io/github/stars/xuxueli/xxl-job?style=social)     | SSRF                    | **6.3** |   [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-7305/detail.md)   |
-|  [CVE-2026-7306](https://www.cve.org/CVERecord?id=CVE-2026-7306)  |   xxl-job   |     ![Stars](https://img.shields.io/github/stars/xuxueli/xxl-job?style=social)     | Hard-coded Key          | **5.6** |   [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-7306/detail.md)   |
-| [CVE-2026-40610](https://www.cve.org/CVERecord?id=CVE-2026-40610) |   BentoML   |     ![Stars](https://img.shields.io/github/stars/bentoml/BentoML?style=social)     | Link Following          | **5.5** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-40610/detail_en.md) |
-| [CVE-2026-48763](https://www.cve.org/CVERecord?id=CVE-2026-48763) |  typebot.io | ![Stars](https://img.shields.io/github/stars/baptisteArno/typebot.io?style=social) | Missing Authorization   | **8.2** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-48763/detail_en.md) |
-| [CVE-2026-48764](https://www.cve.org/CVERecord?id=CVE-2026-48764) |  typebot.io | ![Stars](https://img.shields.io/github/stars/baptisteArno/typebot.io?style=social) | SSRF                    | **8.2** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-48764/detail_en.md) |
-| [CVE-2026-48765](https://www.cve.org/CVERecord?id=CVE-2026-48765) |  typebot.io | ![Stars](https://img.shields.io/github/stars/baptisteArno/typebot.io?style=social) | Authorization Bypass    | **9.9** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-48765/detail_en.md) |
-| [CVE-2026-48766](https://www.cve.org/CVERecord?id=CVE-2026-48766) |  typebot.io | ![Stars](https://img.shields.io/github/stars/baptisteArno/typebot.io?style=social) | Sensitive Data Exposure | **7.6** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-48766/detail_en.md) |
-| [CVE-2026-48767](https://www.cve.org/CVERecord?id=CVE-2026-48767) |  typebot.io | ![Stars](https://img.shields.io/github/stars/baptisteArno/typebot.io?style=social) | Sensitive Data Exposure | **7.6** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-48767/detail_en.md) |
-| [CVE-2026-45296](https://www.cve.org/CVERecord?id=CVE-2026-45296) |  OpenReplay |  ![Stars](https://img.shields.io/github/stars/openreplay/openreplay?style=social)  | Improper Access Control | **7.7** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-45296/detail_en.md) |
-| [CVE-2026-46372](https://www.cve.org/CVERecord?id=CVE-2026-46372) | SillyTavern | ![Stars](https://img.shields.io/github/stars/SillyTavern/SillyTavern?style=social) | SSRF                    | **8.5** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-46372/detail_en.md) |
-| [CVE-2026-45260](https://www.cve.org/CVERecord?id=CVE-2026-45260) |   pimcore   |     ![Stars](https://img.shields.io/github/stars/pimcore/pimcore?style=social)     | Missing Authorization   | **8.1** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-45260/detail_en.md) |
-| [CVE-2026-41235](https://www.cve.org/CVERecord?id=CVE-2026-41235) |   froxlor   |     ![Stars](https://img.shields.io/github/stars/froxlor/froxlor?style=social)     | Incorrect Authorization | **8.8** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-41235/detail_en.md) |
-| [CVE-2026-41236](https://www.cve.org/CVERecord?id=CVE-2026-41236) |   froxlor   |     ![Stars](https://img.shields.io/github/stars/froxlor/froxlor?style=social)     | Link Following          | **8.8** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-41236/detail_en.md) |
-| [CVE-2026-43984](https://www.cve.org/CVERecord?id=CVE-2026-43984) |   Tautulli  |    ![Stars](https://img.shields.io/github/stars/Tautulli/Tautulli?style=social)    | Stored XSS              | **8.9** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-43984/detail_en.md) |
-| [CVE-2026-43985](https://www.cve.org/CVERecord?id=CVE-2026-43985) |   Tautulli  |    ![Stars](https://img.shields.io/github/stars/Tautulli/Tautulli?style=social)    | CSRF                    | **8.8** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-43985/detail_en.md) |
-| [CVE-2026-43986](https://www.cve.org/CVERecord?id=CVE-2026-43986) |   Tautulli  |    ![Stars](https://img.shields.io/github/stars/Tautulli/Tautulli?style=social)    | SSRF                    | **9.9** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-43986/detail_en.md) |
-| [CVE-2026-54091](https://www.cve.org/CVERecord?id=CVE-2026-54091) | filebrowser | ![Stars](https://img.shields.io/github/stars/filebrowser/filebrowser?style=social) | Incorrect Authorization | **7.5** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-54091/detail_en.md) |
-| [CVE-2026-50279](https://www.cve.org/CVERecord?id=CVE-2026-50279) |   craftcms  |       ![Stars](https://img.shields.io/github/stars/craftcms/cms?style=social)      | Improper Authorization  | **6.5** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-50279/detail_en.md) |
-| [CVE-2026-50280](https://www.cve.org/CVERecord?id=CVE-2026-50280) |   craftcms  |       ![Stars](https://img.shields.io/github/stars/craftcms/cms?style=social)      | Improper Access Control | **6.5** | [查看详情](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-50280/detail_en.md) |
+```dotenv
+VERIFICATION_AGENT_ENABLED=true
+# 使用实际的 provider 和 model ID，与 LLM_PROVIDER / LLM_MODEL 保持一致：
+VERIFICATION_AGENT_MODEL_PROVIDER=your-provider
+VERIFICATION_AGENT_MODEL_ID=your-model-id
+VERIFICATION_AGENT_MAX_CONCURRENCY=1
+```
 
-</details>
+以上 `your-*` 是占位符。默认启动脚本从 `backend/.env` 的 `LLM_*` 读取验证容器的模型配置，后端 `VERIFICATION_AGENT_MODEL_*` 必须与之对应；如使用独立模型，可通过 `VERIFIER_*` 覆盖，见 [动态验证说明](docs/DYNAMIC_VERIFICATION.md)。当前容器适配 OpenAI Chat Completions 兼容协议。
 
----
+```bash
+./scripts/verify-stack.sh up -d --build
+# 修改 backend/.env 后重建服务容器以加载新配置：
+./scripts/compose.sh up -d backend agent-worker one-click-cve-worker
+./scripts/verify-stack.sh ps
+# 可选：真实调用一次模型，会产生 API 用量
+./scripts/verify-stack.sh smoke
+```
 
+Pi 会在专用 Docker daemon 中真实构建、启动项目并尝试复现，结果需要原始证据支撑。Pi 容器不挂载宿主 Docker socket，但 privileged DinD 不等于虚拟机隔离；具体执行边界见 [动态验证说明](docs/DYNAMIC_VERIFICATION.md)。
 
-## ⚠️ 安全与合规
+## 怎么使用
 
-> [!WARNING]
->
-> 本项目仅限用于已获授权的安全研究、代码审计及学习交流，严禁将其用于任何未经授权的漏洞扫描、渗透测试或安全评估。
->
-> 请确保仅在获得明确授权的目标与环境中执行扫描、漏洞验证或 PoC 测试。
+1. **配置模型**：确认 `backend/.env` 的模型配置可用，也可在应用的模型配置入口设置主审计模型。独立 Pi 使用上述服务端环境配置。
+2. **导入项目**：在“项目”添加 Git 仓库、上传 ZIP，或使用已有本地目录。Compose 部署时，把本地源码放在仓库 `projects/` 下，界面填写 `/workspace/projects/项目目录`。
+3. **创建源码审计**：进入“审计任务 → 新建审计”，选择项目、版本和分析预设。当前创建窗口默认开启“使用源码发现与覆盖账本”，根据入口与场景自动选择 Skills。
+4. **查看证据与覆盖**：进入任务详情的“候选与覆盖”，查看静态支持、未决、排除项和原始工具告警。打开源码证据核对真实行号；存在可调度的剩余工作时可继续审计。
+5. **使用原有 CVE 流程**：通过“一键 CVE”或关闭源码发现开关进入原有审计流程。源码发现 v2 的候选保存在独立账本中，不会自动变成已验证漏洞或 CVE 申报材料。
+6. **执行真实动态验证**：在“漏洞管理”对已有漏洞记录点击“动态验证”，查看环境、复现步骤、原始输出与判定，按需暂停/继续或导出验证报告。
 
-> [!IMPORTANT]
->
-> 提交漏洞时，请遵循目标项目的安全政策及漏洞披露规范，包括但不限于：
->
-> * `SECURITY.md`
-> * GitHub Private Vulnerability Reporting
-> * CNA 提交流程
-> * 其他负责任的漏洞披露机制
+`confirmed` 表示本次验证有运行证据；`refuted`、`inconclusive`、`unverifiable` 分别保留推翻理由、未决条件或无法搭建环境的原因。静态结论和动态判定分别展示，验证结果目前不会自动改写既有报告状态或 CVSS。
 
----
+## 日常维护与开发
 
-## 💬 交流与反馈
+```bash
+./scripts/compose.sh logs --tail 100 backend agent-worker
+./scripts/verify-stack.sh logs --tail 100 pi-verifier verifier-dind
+./scripts/compose.sh stop
+./scripts/verify-stack.sh stop
+```
 
-> [!TIP]
->
->AutoCVE 的设计初衷，是探索 Agent 在自动化 CVE 挖掘场景中的应用与实践。目前，项目仍在持续迭代和完善，架构设计和功能实现都有不少需要打磨的地方。欢迎大家提交 Issue、PR，分享使用反馈或功能建议，共同提升 AutoCVE 的可靠性与实用性。
->
->也欢迎随时来找我交流探讨！无论是技术问题、功能建议，还是 CVE 挖掘过程中遇到的疑问，都可以通过以下方式联系我：
->
-> * 📧 **Email：** [359111529@qq.com](mailto:359111529@qq.com)
-> * 🐙 **GitHub：** [@larlarua](https://github.com/larlarua)
-> * 📖 **公众号文章：** [我开发了一个专门挖 CVE 的 Agent，一周拿到 30 个 CVE 编号](https://mp.weixin.qq.com/s/2dIa0NEtX_3cm2euGVGOyg)
-> * 💬 **微信交流群：** 请查看 [AutoCVE 微信交流群说明](https://github.com/larlarua/AutoCVE/issues/34)
+停止命令保留数据卷。升级前备份数据库、上传卷、`projects/`、技能和报告模板；不要复制另一台机器的 `.venv` 或 `node_modules`。代理、DNS、rootless Docker、目录挂载和故障排查见 [Linux / macOS 部署](docs/LINUX_DEPLOYMENT.md)。
 
----
+本机热重载开发使用 Python 3.12、uv、Node.js 22.19+ 和 npm，安装依赖后运行 `./start.sh`，访问 `http://localhost:5173`；停止用 `./stop.sh`。完整准备步骤与 Pango 等系统依赖见 [本地开发](docs/LOCAL_DEVELOPMENT.md)。
 
-## 🙏 致谢
+## 文档
 
-> [!NOTE]
->
-> AutoCVE 项目在开发初期参考并学习了 [DeepAudit](https://github.com/lintsinghua/DeepAudit) 的工程架构，这为本项目的快速起步提供了重要帮助。
->
-> 谨此向 DeepAudit 项目及其开发者致以诚挚的谢意。
+| 文档 | 内容 |
+| --- | --- |
+| [本 fork 改动清单](docs/FORK_CHANGES.md) | 上游归属、功能增量、实现入口、验证范围和未实现部分 |
+| [源码发现 v2](docs/DISCOVERY_V2.md) | 候选账本、覆盖、恢复、导出、配置和 API |
+| [检测与体验改进](docs/DETECTION_AND_UX.md) | 多语言、入口、信任边界、覆盖与界面 |
+| [Skills 接入](docs/SKILLS_INTEGRATION.md) | 18 个适配包、来源、许可证、读取边界与升级 |
+| [独立动态验证](docs/DYNAMIC_VERIFICATION.md) | Pi、DinD、真实 PoC、暂停/继续和证据契约 |
+| [Linux / macOS 部署](docs/LINUX_DEPLOYMENT.md) | 源码构建、平台差异、网络、存储、迁移与预检 |
+| [本地开发](docs/LOCAL_DEVELOPMENT.md) | 环境准备、启动、日志和常用检查 |
+| [上游功能手册](docs/USER_GUIDE.md) | 原有模型、项目、一键 CVE、漏洞和工作流功能；部署以本 README 为准 |
 
-<details>
-<summary><strong>🧩 关于 AutoCVE 的工程设计</strong></summary>
+## 来源与许可
 
-<br>
+基础项目由 [larlarua/AutoCVE](https://github.com/larlarua/AutoCVE) 开发；本仓库保留 Git 历史与 [AGPL-3.0 许可证](LICENSE)。上游说明其早期工程架构参考了 [DeepAudit](https://github.com/lintsinghua/DeepAudit)，这里一并保留致谢。
 
-在参考相关开源项目工程经验的基础上，AutoCVE 针对自动化 CVE 挖掘这一场景，对项目整体 Agent 工程进行了重构与定制化设计，重点实现了审计流程编排、ReAct Loop 工程化重构、状态机调度、循环控制与终止判断、工具编排、报告生成、Skill 机制以及对话交互等能力。
+新增 Skills 的第三方材料分别保留 Trail of Bits（CC-BY-SA-4.0）、Cloudflare（MIT）、Sentry（Apache-2.0，部分 OWASP 参考为 CC-BY-SA-4.0）的来源、许可证和修改说明；详见各适配包的 `NOTICE.md`、[固定来源清单](skills_sources_manifest.json) 与 [归档说明](skill_sources/README.md)。这些材料的许可不替换项目根许可证。
 
-后续，AutoCVE 也将持续迭代优化，进一步提升在漏洞挖掘场景下的自动化水平、审计深度与实战效果。
-
-</details>
-
----
-
-## License
-
-本项目基于 [AGPL-3.0](./LICENSE) 发布。
+本 fork 的问题和改进建议请提交到 [yangtt57/AutoCVE Issues](https://github.com/yangtt57/AutoCVE/issues)。沿用上游的用途要求：仅用于已获授权的安全研究、代码审计和学习，漏洞披露遵循目标项目的安全政策。

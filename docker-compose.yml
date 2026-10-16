@@ -4,10 +4,10 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB_NAME:-autocve}
     ports:
-      - '5432:5432'
+      - '${DB_BIND_ADDRESS:-127.0.0.1}:${DB_PORT:-5432}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -22,7 +22,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - '6379:6379'
+      - '${REDIS_BIND_ADDRESS:-127.0.0.1}:${REDIS_PORT:-6379}:6379'
     volumes:
       - redis_data:/data
     healthcheck:
@@ -37,11 +37,13 @@ services:
     image: autocve-ui-rebrand-backend:latest
     build:
       context: ./backend
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
       args:
-        http_proxy: ''
-        https_proxy: ''
-        HTTP_PROXY: ''
-        HTTPS_PROXY: ''
+        http_proxy: ${AUTOCVE_BUILD_HTTP_PROXY:-}
+        https_proxy: ${AUTOCVE_BUILD_HTTPS_PROXY:-${AUTOCVE_BUILD_HTTP_PROXY:-}}
+        HTTP_PROXY: ${AUTOCVE_BUILD_HTTP_PROXY:-}
+        HTTPS_PROXY: ${AUTOCVE_BUILD_HTTPS_PROXY:-${AUTOCVE_BUILD_HTTP_PROXY:-}}
         all_proxy: ''
         ALL_PROXY: ''
     restart: unless-stopped
@@ -51,7 +53,7 @@ services:
       - path: ./backend/.env
         required: false
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/${POSTGRES_DB_NAME:-autocve}
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB_NAME:-autocve}
       REDIS_URL: redis://redis:6379/0
       AGENT_ENABLED: 'true'
       AGENT_TASK_EXECUTION_MODE: worker
@@ -65,7 +67,10 @@ services:
       SANDBOX_IMAGE: ${SANDBOX_IMAGE:-autocve-sandbox:latest}
       MANAGED_PROJECTS_ROOT: /workspace/projects
       PROJECT_SOURCE_STORAGE_PATH: /app/uploads/project_sources
+      DISCOVERY_STORAGE_PATH: /app/uploads/discovery_v2
+      DISCOVERY_SCANNER_IMAGE: ${DISCOVERY_SCANNER_IMAGE:-autocve-static-scanner:latest}
       HOST_PROJECT_ROOT: ${HOST_PROJECT_ROOT:-}
+      DOCKER_HOST: unix:///var/run/docker.sock
       CHECKMARX_FEATURE_ENABLED: ${CHECKMARX_FEATURE_ENABLED:-false}
       CHECKMARX_BASE_URL: ${CHECKMARX_BASE_URL:-}
       CHECKMARX_CLIENT_ID: ${CHECKMARX_CLIENT_ID:-resource_owner_sast_client}
@@ -78,7 +83,7 @@ services:
       http_proxy: ''
       https_proxy: ''
       NO_PROXY: '*'
-    command: sh -c ".venv/bin/alembic upgrade head && .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    command: /app/docker-entrypoint.sh
     depends_on:
       db:
         condition: service_healthy
@@ -91,13 +96,13 @@ services:
       retries: 12
       start_period: 10s
     ports:
-      - '8000:8000'
+      - '${API_BIND_ADDRESS:-127.0.0.1}:${API_PORT:-8000}:8000'
     volumes:
       - backend_uploads:/app/uploads
       - ./skill_library:/app/skill_library
       - ./report_template_library:/app/report_template_library
       - ./projects:/workspace/projects
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ${AUTOCVE_DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
     networks:
       - autocve-network
 
@@ -110,7 +115,7 @@ services:
       - path: ./backend/.env
         required: false
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/${POSTGRES_DB_NAME:-autocve}
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB_NAME:-autocve}
       REDIS_URL: redis://redis:6379/0
       AGENT_ENABLED: 'true'
       AGENT_TASK_EXECUTION_MODE: worker
@@ -123,7 +128,10 @@ services:
       SANDBOX_IMAGE: ${SANDBOX_IMAGE:-autocve-sandbox:latest}
       MANAGED_PROJECTS_ROOT: /workspace/projects
       PROJECT_SOURCE_STORAGE_PATH: /app/uploads/project_sources
+      DISCOVERY_STORAGE_PATH: /app/uploads/discovery_v2
+      DISCOVERY_SCANNER_IMAGE: ${DISCOVERY_SCANNER_IMAGE:-autocve-static-scanner:latest}
       HOST_PROJECT_ROOT: ${HOST_PROJECT_ROOT:-}
+      DOCKER_HOST: unix:///var/run/docker.sock
       CHECKMARX_FEATURE_ENABLED: ${CHECKMARX_FEATURE_ENABLED:-false}
       CHECKMARX_BASE_URL: ${CHECKMARX_BASE_URL:-}
       CHECKMARX_CLIENT_ID: ${CHECKMARX_CLIENT_ID:-resource_owner_sast_client}
@@ -149,7 +157,7 @@ services:
       - ./skill_library:/app/skill_library
       - ./report_template_library:/app/report_template_library
       - ./projects:/workspace/projects
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ${AUTOCVE_DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
     networks:
       - autocve-network
 
@@ -162,7 +170,7 @@ services:
       - path: ./backend/.env
         required: false
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/${POSTGRES_DB_NAME:-autocve}
+      DATABASE_URL: postgresql+asyncpg://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB_NAME:-autocve}
       REDIS_URL: redis://redis:6379/0
       AGENT_ENABLED: 'true'
       AGENT_TASK_EXECUTION_MODE: worker
@@ -178,7 +186,10 @@ services:
       SANDBOX_IMAGE: ${SANDBOX_IMAGE:-autocve-sandbox:latest}
       MANAGED_PROJECTS_ROOT: /workspace/projects
       PROJECT_SOURCE_STORAGE_PATH: /app/uploads/project_sources
+      DISCOVERY_STORAGE_PATH: /app/uploads/discovery_v2
+      DISCOVERY_SCANNER_IMAGE: ${DISCOVERY_SCANNER_IMAGE:-autocve-static-scanner:latest}
       HOST_PROJECT_ROOT: ${HOST_PROJECT_ROOT:-}
+      DOCKER_HOST: unix:///var/run/docker.sock
       CHECKMARX_FEATURE_ENABLED: ${CHECKMARX_FEATURE_ENABLED:-false}
       CHECKMARX_BASE_URL: ${CHECKMARX_BASE_URL:-}
       CHECKMARX_CLIENT_ID: ${CHECKMARX_CLIENT_ID:-resource_owner_sast_client}
@@ -204,20 +215,23 @@ services:
       - ./skill_library:/app/skill_library
       - ./report_template_library:/app/report_template_library
       - ./projects:/workspace/projects
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ${AUTOCVE_DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock
     networks:
       - autocve-network
 
   frontend:
     build:
       context: ./frontend
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
       args:
-        http_proxy: ''
-        https_proxy: ''
-        HTTP_PROXY: ''
-        HTTPS_PROXY: ''
+        http_proxy: ${AUTOCVE_BUILD_HTTP_PROXY:-}
+        https_proxy: ${AUTOCVE_BUILD_HTTPS_PROXY:-${AUTOCVE_BUILD_HTTP_PROXY:-}}
+        HTTP_PROXY: ${AUTOCVE_BUILD_HTTP_PROXY:-}
+        HTTPS_PROXY: ${AUTOCVE_BUILD_HTTPS_PROXY:-${AUTOCVE_BUILD_HTTP_PROXY:-}}
         all_proxy: ''
         ALL_PROXY: ''
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
         VITE_ENABLE_CHECKMARX_SCAN: ${VITE_ENABLE_CHECKMARX_SCAN:-false}
         VITE_APP_VERSION: ${VITE_APP_VERSION:-}
     restart: unless-stopped
@@ -234,7 +248,7 @@ services:
       backend:
         condition: service_healthy
     ports:
-      - '3000:80'
+      - '${WEB_BIND_ADDRESS:-0.0.0.0}:${WEB_PORT:-3000}:80'
     volumes:
       - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
@@ -249,11 +263,18 @@ services:
     restart: 'no'
     command: echo 'Sandbox image ready'
 
+  static-scanner:
+    build:
+      context: ./docker/static-scanner
+    image: autocve-static-scanner:latest
+    restart: 'no'
+    profiles: ["discovery"]
+
   adminer:
     image: adminer:latest
     restart: unless-stopped
     ports:
-      - '8080:8080'
+      - '${ADMINER_BIND_ADDRESS:-127.0.0.1}:${ADMINER_PORT:-8080}:8080'
     depends_on:
       db:
         condition: service_healthy

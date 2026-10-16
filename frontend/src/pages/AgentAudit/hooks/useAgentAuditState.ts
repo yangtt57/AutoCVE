@@ -44,7 +44,13 @@ function agentAuditReducer(state: AgentAuditState, action: AgentAuditAction): Ag
 
     case 'ADD_FINDING': {
       // 🔥 添加单个 finding，避免重复
-      const newFinding = action.payload;
+      const newFinding: AgentFinding = {
+        task_id: state.task?.id || "", title: "待核查线索", severity: "unknown", vulnerability_type: "unknown",
+        description: null, file_path: null, line_start: null, line_end: null, code_snippet: null,
+        status: "pending", is_verified: false, has_poc: false, poc_code: null, suggestion: null,
+        fix_code: null, ai_explanation: null, ai_confidence: null, created_at: new Date().toISOString(),
+        ...action.payload,
+      };
       const existingIds = new Set(state.findings.map(f => f.id));
       if (newFinding.id && existingIds.has(newFinding.id)) {
         return state; // 已存在，不添加
@@ -282,7 +288,7 @@ export function useAgentAuditState() {
 
   const isComplete = useMemo(() => {
     const status = state.task?.status;
-    return status === 'completed' || status === 'failed' || status === 'cancelled';
+    return status === 'completed' || status === 'partial' || status === 'failed' || status === 'cancelled';
   }, [state.task?.status]);
 
   return {

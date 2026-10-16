@@ -79,6 +79,8 @@ class Settings(BaseSettings):
     LLM_GAP_MS: int = 2000
     ZIP_STORAGE_PATH: str = "./uploads/zip_files"
     PROJECT_SOURCE_STORAGE_PATH: str = "./uploads/project_sources"
+    DISCOVERY_STORAGE_PATH: str = "./uploads/discovery_v2"
+    DISCOVERY_SCANNER_IMAGE: str = "autocve-static-scanner:latest"
     MANAGED_PROJECTS_ROOT: str = DEFAULT_MANAGED_PROJECTS_ROOT
     OUTPUT_LANGUAGE: str = "zh-CN"
 
@@ -152,6 +154,27 @@ class Settings(BaseSettings):
         "MKNOD,AUDIT_WRITE,AUDIT_CONTROL,SETFCAP,MAC_OVERRIDE,MAC_ADMIN"
     )
     SANDBOX_NO_NEW_PRIVILEGES: bool = True
+
+    # ---- 独立动态验证 Agent（Pi，跑在隔离的 Docker 环境里）----
+    # 默认为关闭：它需要一台能跑 Docker 的机器，并且会真的构建、运行被审计的项目，
+    # 不应该在没准备好的部署里被误触发。
+    VERIFICATION_AGENT_ENABLED: bool = False
+    # 常驻验证容器名，对应 docker-compose.verify.yml 里的 pi-verifier。
+    VERIFICATION_AGENT_CONTAINER: str = "autocve-pi-verifier"
+    # 容器内的工作根目录，必须与 verifier-dind 挂载的路径一致。
+    VERIFICATION_AGENT_WORKDIR: str = "/verifier/work"
+    VERIFICATION_AGENT_RULES_PATH: str = "/opt/verifier/verifier-rules.md"
+    VERIFICATION_AGENT_TOOLS: str = "read,write,edit,bash,grep,find,ls"
+    # 单次验证的挂钟预算，也是容器内 timeout 的值。
+    VERIFICATION_AGENT_TIMEOUT_SECONDS: int = 3600
+    # 同一时间允许同时构建/运行几个被测项目环境。默认 1，按机器配置上调。
+    VERIFICATION_AGENT_MAX_CONCURRENCY: int = 1
+    # 一次验证允许累计暂停多久（秒）。容器内的硬超时会加上这个额度，
+    # 所以「暂停」不会白白吃掉验证预算。默认 4 小时。
+    VERIFICATION_AGENT_MAX_PAUSE_SECONDS: int = 14400
+    VERIFICATION_AGENT_MODEL_PROVIDER: str = "deepseek"
+    VERIFICATION_AGENT_MODEL_ID: str = ""
+    VERIFICATION_AGENT_THINKING_LEVEL: str = "max"
 
     RAG_CHUNK_SIZE: int = 1500
     RAG_CHUNK_OVERLAP: int = 50

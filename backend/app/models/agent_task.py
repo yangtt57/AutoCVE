@@ -30,6 +30,7 @@ class AgentTaskStatus:
     VERIFYING = "verifying"       # 验证阶段
     REPORTING = "reporting"       # 报告生成
     COMPLETED = "completed"       # 已完成
+    PARTIAL = "partial"           # 静态发现部分完成，保留待处理工作
     FAILED = "failed"             # 失败
     CANCELLED = "cancelled"       # 已取消
     PAUSED = "paused"             # 已暂停
@@ -136,6 +137,15 @@ class AgentTask(Base):
     
     def __repr__(self):
         return f"<AgentTask {self.id} - {self.status}>"
+
+    @property
+    def coverage(self) -> dict:
+        config = self.agent_config or {}
+        if config.get("discovery_result"):
+            summary = config["discovery_result"].get("summary", {})
+            return {"basis": "source_evidence", **summary}
+        return config.get("read_coverage") or {"basis": "unknown", "read_file_count": None,
+                                              "total_files": self.total_files or 0}
     
     @property
     def progress_percentage(self) -> float:

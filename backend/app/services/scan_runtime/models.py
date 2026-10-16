@@ -21,7 +21,7 @@ class ScannerRequest:
     target_paths: list[str] = field(default_factory=lambda: ["."])
     exclude_patterns: list[str] = field(default_factory=list)
     timeout_seconds: int = 600
-    max_index_findings: int = 200
+    max_index_findings: int | None = None  # Legacy input; ingestion always retains every finding.
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

@@ -226,6 +226,7 @@ export default function SkillsManager() {
 	}, [search, skills]);
 	const showSkillSkeletons = loading && skills.length === 0;
 	const showEmptySkills = loaded && !loading && filteredSkills.length === 0;
+	const discoverySkillCount = skills.filter((skill) => metadataString(skill, "runtime") === "discovery_v2").length;
 
 	const loadSkillsPage = async (options: { silent?: boolean } = {}) => {
 		const shouldShowLoading = !options.silent;
@@ -472,7 +473,7 @@ export default function SkillsManager() {
 		<div className="cyber-bg-elevated relative min-h-screen overflow-x-hidden px-6 py-8">
 			<div className="absolute inset-0 cyber-grid-subtle pointer-events-none" />
 			<div className="relative z-10 mx-auto max-w-7xl space-y-5">
-				<section className="overflow-hidden rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(242,248,245,0.98))] p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+				<section className="overflow-hidden rounded-2xl border border-slate-200 bg-card p-6 shadow-sm">
 					<div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
 						<div className="max-w-3xl space-y-3">
 							<div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white px-3 py-1 text-xs font-medium text-teal-800">
@@ -519,7 +520,7 @@ export default function SkillsManager() {
 				</section>
 
 				<section className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(280px,0.9fr)_repeat(3,minmax(150px,0.55fr))]">
-					<div className="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-[0_16px_42px_rgba(15,23,42,0.05)]">
+					<div className="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm">
 						<div className="flex items-start justify-between gap-4">
 							<div className="space-y-2">
 								<div className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
@@ -533,7 +534,7 @@ export default function SkillsManager() {
 						</div>
 					</div>
 
-					<div className="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-[0_16px_42px_rgba(15,23,42,0.05)]">
+					<div className="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm">
 						<div className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
 							技能总数
 						</div>
@@ -541,7 +542,7 @@ export default function SkillsManager() {
 							{skills.length}
 						</div>
 					</div>
-					<div className="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-[0_16px_42px_rgba(15,23,42,0.05)]">
+					<div className="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm">
 						<div className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
 							当前 Agent 已启用
 						</div>
@@ -549,7 +550,7 @@ export default function SkillsManager() {
 							{agentBindingCount(skills, selectedAgent)}
 						</div>
 					</div>
-					<div className="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-[0_16px_42px_rgba(15,23,42,0.05)]">
+					<div className="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm">
 						<div className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
 							GitHub 来源
 						</div>
@@ -559,7 +560,7 @@ export default function SkillsManager() {
 					</div>
 				</section>
 
-				<section className="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-[0_16px_42px_rgba(15,23,42,0.05)]">
+				<section className="rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-sm">
 					<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 						<div>
 							<div className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
@@ -592,12 +593,16 @@ export default function SkillsManager() {
 					</div>
 				</section>
 
+				{discoverySkillCount > 0 && <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm">
+					综合静态审计已接入 {discoverySkillCount} 个 Skills，任务会按源码范围、语言和阶段自动选择。
+					每个工作包使用一个主方法、一个专项和至多两个领域参考；无需逐个绑定旧版 Agent。
+				</div>}
 				<section className="grid gap-4 md:grid-cols-2">
 					{showSkillSkeletons &&
 						Array.from({ length: 4 }).map((_, index) => (
 							<article
 								key={`skill-loading-${index}`}
-								className="rounded-[24px] border border-slate-200 bg-white/90 p-5 shadow-[0_18px_44px_rgba(15,23,42,0.05)]"
+								className="rounded-lg border border-slate-200 bg-white/90 p-5 shadow-sm"
 							>
 								<div className="flex items-start gap-3">
 									<div className="h-11 w-11 animate-pulse rounded-2xl bg-slate-100" />
@@ -617,13 +622,15 @@ export default function SkillsManager() {
 						filteredSkills.map((skill) => {
 						const binding = bindingFor(skill, selectedAgent);
 						const folderPath = skillFolderPath(skill);
+						const managedRuntime = metadataString(skill, "runtime");
+						const managed = managedRuntime === "discovery_v2" || managedRuntime === "import_review";
 						return (
 							<article
 								key={skill.id}
-								className={`group relative overflow-hidden rounded-[24px] border p-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)] transition duration-200 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(15,23,42,0.12)] ${
+								className={`group relative overflow-hidden rounded-lg border p-5 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-sm ${
 									binding?.enabled
-										? "border-primary/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.99),rgba(239,253,246,0.92))]"
-										: "border-slate-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.99),rgba(248,250,252,0.95))]"
+										? "border-primary/20 bg-card"
+										: "border-slate-200 bg-card"
 								}`}
 							>
 								<div
@@ -665,15 +672,18 @@ export default function SkillsManager() {
 											{skill.description || "暂无描述"}
 										</p>
 									</div>
-									<Switch
+									{managed ? <span className="relative z-10 shrink-0 rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
+										{managedRuntime === "discovery_v2" ? "按场景选用" : "导入审阅参考"}
+									</span> : <Switch
 										className="relative z-10"
 										checked={Boolean(binding?.enabled)}
 										onCheckedChange={(checked) => toggleBinding(skill, checked)}
-									/>
+									/>}
 								</div>
 
 								<div className="relative mt-5 grid gap-3">
 									<DetailRow label="Skill 目录" value={folderPath} />
+									{managed && <DetailRow label="适配版本" value={metadataString(skill, "adaptation_version")} />}
 								</div>
 
 								<div className="relative mt-5 flex flex-wrap gap-3">
@@ -688,6 +698,8 @@ export default function SkillsManager() {
 										variant="outline"
 										size="sm"
 										onClick={() => openEdit(skill)}
+										disabled={managed}
+										title={managed ? "固定版本资源请在项目文件中更新，并同步校验清单" : undefined}
 									>
 										<Pencil className="mr-2 h-4 w-4" /> 编辑
 									</Button>
@@ -704,6 +716,7 @@ export default function SkillsManager() {
 										variant="outline"
 										size="sm"
 										onClick={() => requestDeleteSkill(skill)}
+										disabled={managed}
 									>
 										<Trash2 className="mr-2 h-4 w-4" /> 删除
 									</Button>
@@ -712,7 +725,7 @@ export default function SkillsManager() {
 						);
 					})}
 					{showEmptySkills && (
-						<div className="md:col-span-2 rounded-[24px] border border-dashed border-slate-200 bg-white/80 p-12 text-center shadow-[0_18px_44px_rgba(15,23,42,0.04)]">
+						<div className="md:col-span-2 rounded-lg border border-dashed border-slate-200 bg-white/80 p-12 text-center shadow-sm">
 							<div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
 								<BookOpen className="h-5 w-5" />
 							</div>
@@ -727,7 +740,7 @@ export default function SkillsManager() {
 				</section>
 
 				<Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-					<DialogContent className="max-w-6xl border-border bg-[linear-gradient(180deg,rgba(255,255,255,.99),rgba(236,253,245,.9))] sm:max-h-[88vh] overflow-hidden">
+					<DialogContent className="max-w-6xl border-border bg-card sm:max-h-[88vh] overflow-hidden">
 						<DialogHeader>
 							<DialogTitle className="text-2xl font-black text-foreground">
 								Skill 详情
@@ -735,7 +748,7 @@ export default function SkillsManager() {
 						</DialogHeader>
 						{detailSkill && (
 							<div className="grid gap-5 lg:grid-cols-[0.92fr_1.08fr]">
-								<div className="space-y-4 rounded-[24px] border border-border bg-white/95 p-5">
+								<div className="space-y-4 rounded-lg border border-border bg-white/95 p-5">
 									<div>
 										<h3 className="text-2xl font-bold text-foreground">
 											{detailSkill.name}
@@ -745,12 +758,18 @@ export default function SkillsManager() {
 										</p>
 									</div>
 									<DetailRow label="Slug" value={detailSkill.slug} />
+									{metadataString(detailSkill, "upstream_repo") && <>
+										<DetailRow label="上游来源" value={metadataString(detailSkill, "upstream_repo")} />
+										<DetailRow label="固定提交" value={metadataString(detailSkill, "upstream_commit")} />
+										<DetailRow label="许可" value={metadataString(detailSkill, "license")} />
+										<DetailRow label="适配版本" value={metadataString(detailSkill, "adaptation_version")} />
+									</>}
 									<DetailRow
 										label="Skill 目录"
 										value={skillFolderPath(detailSkill)}
 									/>
 								</div>
-								<div className="rounded-[24px] border border-border bg-white/95 p-5">
+								<div className="rounded-lg border border-border bg-white/95 p-5">
 									<div className="flex items-center justify-between">
 										<h4 className="text-lg font-bold text-foreground">
 											SKILL.md 内容
@@ -781,7 +800,7 @@ export default function SkillsManager() {
 
 				<Dialog open={editorOpen} onOpenChange={setEditorOpen}>
 					<DialogContent
-						className="max-w-2xl border-border bg-[linear-gradient(180deg,rgba(255,255,255,.99),rgba(236,253,245,.9))] sm:max-h-[90vh] overflow-hidden"
+						className="max-w-2xl border-border bg-card sm:max-h-[90vh] overflow-hidden"
 					>
 						<DialogHeader>
 							<DialogTitle className="text-2xl font-black text-foreground">
@@ -789,8 +808,8 @@ export default function SkillsManager() {
 							</DialogTitle>
 						</DialogHeader>
 						<div className="grid gap-5">
-							<div className="space-y-4 rounded-[24px] border border-border bg-white/95 p-5">
-								<div className="rounded-[22px] border border-primary/15 bg-[linear-gradient(180deg,rgba(236,253,245,.92),rgba(255,255,255,.96))] p-4">
+							<div className="space-y-4 rounded-lg border border-border bg-white/95 p-5">
+								<div className="rounded-lg border border-primary/15 bg-card p-4">
 									<div className="text-xs uppercase tracking-[0.22em] text-primary">
 										配置面板
 									</div>
@@ -893,8 +912,8 @@ export default function SkillsManager() {
 				</Dialog>
 
 				<Dialog open={importOpen} onOpenChange={setImportOpen}>
-					<DialogContent className="max-w-[640px] overflow-hidden rounded-[28px] border border-slate-200 bg-white p-0 shadow-[0_28px_90px_rgba(15,23,42,0.22)]">
-						<div className="border-b border-emerald-100 bg-[linear-gradient(135deg,rgba(240,253,244,0.96),rgba(255,255,255,0.98))] px-8 py-7">
+					<DialogContent className="max-w-[640px] overflow-hidden rounded-lg border border-slate-200 bg-white p-0 shadow-sm">
+						<div className="border-b border-emerald-100 bg-card px-8 py-7">
 							<DialogHeader>
 								<div className="flex items-center gap-4">
 									<div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-200 bg-white text-primary shadow-sm">
@@ -907,7 +926,7 @@ export default function SkillsManager() {
 							</DialogHeader>
 						</div>
 						<div className="space-y-5 px-8 py-7">
-							<div className="rounded-[24px] border border-emerald-100 bg-[linear-gradient(180deg,rgba(236,253,245,0.68),rgba(255,255,255,0.96))] p-5">
+							<div className="rounded-lg border border-emerald-100 bg-card p-5">
 								<div className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">
 									导入说明
 								</div>
@@ -949,13 +968,13 @@ export default function SkillsManager() {
 											key={index}
 											className="flex items-start gap-3 rounded-2xl bg-white/78 px-3 py-2.5 text-sm leading-7 text-slate-600 ring-1 ring-emerald-100/70"
 										>
-											<span className="mt-2 flex h-2.5 w-2.5 shrink-0 rounded-full bg-primary/70 shadow-[0_0_0_4px_rgba(16,185,129,0.10)]" />
+											<span className="mt-2 flex h-2.5 w-2.5 shrink-0 rounded-full bg-primary/70 shadow-sm" />
 											<span>{item.text}</span>
 										</li>
 									))}
 								</ul>
 							</div>
-							<div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_52px_rgba(15,23,42,0.06)]">
+							<div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
 								<div className="space-y-5">
 									<div className="space-y-2">
 										<Label>GitHub 仓库 URL</Label>
@@ -1005,8 +1024,8 @@ export default function SkillsManager() {
 						if (!open) setUploadFile(null);
 					}}
 				>
-					<DialogContent className="max-w-[620px] overflow-hidden rounded-[28px] border border-slate-200 bg-white p-0 shadow-[0_28px_90px_rgba(15,23,42,0.22)]">
-						<div className="border-b border-emerald-100 bg-[linear-gradient(135deg,rgba(240,253,244,0.96),rgba(255,255,255,0.98))] px-8 py-7">
+					<DialogContent className="max-w-[620px] overflow-hidden rounded-lg border border-slate-200 bg-white p-0 shadow-sm">
+						<div className="border-b border-emerald-100 bg-card px-8 py-7">
 							<DialogHeader>
 								<div className="flex items-center gap-4">
 									<div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-200 bg-white text-primary shadow-sm">
@@ -1019,7 +1038,7 @@ export default function SkillsManager() {
 							</DialogHeader>
 						</div>
 						<div className="space-y-5 px-8 py-7">
-							<div className="rounded-[24px] border border-emerald-100 bg-[linear-gradient(180deg,rgba(236,253,245,0.68),rgba(255,255,255,0.96))] p-5">
+							<div className="rounded-lg border border-emerald-100 bg-card p-5">
 								<div className="flex gap-4">
 									<div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
 										<UploadCloud className="h-5 w-5" />
@@ -1033,7 +1052,7 @@ export default function SkillsManager() {
 									</p>
 								</div>
 							</div>
-							<label className="group flex cursor-pointer flex-col items-center justify-center rounded-[26px] border border-dashed border-emerald-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.94))] px-6 py-10 text-center transition hover:border-primary/50 hover:bg-emerald-50/40">
+							<label className="group flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-emerald-200 bg-card px-6 py-10 text-center transition hover:border-primary/50 hover:bg-emerald-50/40">
 								<div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition group-hover:scale-105">
 									<FileArchive className="h-6 w-6" />
 								</div>

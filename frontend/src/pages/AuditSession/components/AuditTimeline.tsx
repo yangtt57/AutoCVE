@@ -485,7 +485,7 @@ export function AuditTimeline({
                         <div className="relative">
                           {reasoningContent ? (
                             <details
-                              defaultOpen
+                              open
                               className="mb-3 rounded-2xl border border-[#e0e8e3] bg-[#f7fbf8] px-4 py-3 text-sm text-slate-600"
                             >
                               <summary className="cursor-pointer select-none font-medium text-[#6fa27b]">

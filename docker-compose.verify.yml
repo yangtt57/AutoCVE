@@ -1,0 +1,106 @@
+# AutoCVE 动态验证环境：Pi 验证 Agent + 专用 Docker daemon
+#
+#   docker compose -f docker-compose.verify.yml up -d --build
+#
+# 与主 docker-compose.yml 完全独立，可以单独起停：
+#   - pi-verifier  : 常驻的 Pi 验证 Agent（后端通过 docker exec 驱动）
+#   - verifier-dind: 专用 Docker daemon，Agent 用它来构建/运行被测项目
+#
+# 为什么用专用 daemon 而不是挂宿主机 /var/run/docker.sock：
+#   验证 Agent 会执行从 GitHub 拉来的陌生项目代码，给它宿主 socket 等于给宿主 root。
+#   专用 daemon 让它的构建、镜像、卷和清理动作全部隔离在这一层，
+#   顺带也避免它 prune 掉 AutoCVE 自己的镜像。
+name: autocve-verify
+
+services:
+  verifier-dind:
+    build:
+      context: ./docker/verifier-dind
+    image: autocve-verifier-dind:latest
+    privileged: true
+    environment:
+      DOCKER_TLS_CERTDIR: ""
+      # 默认直连；仅在显式配置时使用代理、DNS 或镜像加速。
+      VERIFIER_REGISTRY_MIRROR: ${VERIFIER_REGISTRY_MIRROR:-}
+      VERIFIER_DNS: ${VERIFIER_DNS:-}
+      VERIFIER_DNS_FALLBACK: ${VERIFIER_DNS_FALLBACK:-}
+      HTTP_PROXY: ${VERIFIER_HTTP_PROXY:-}
+      HTTPS_PROXY: ${VERIFIER_HTTPS_PROXY:-${VERIFIER_HTTP_PROXY:-}}
+      NO_PROXY: ${VERIFIER_NO_PROXY:-localhost,127.0.0.1,::1,verifier-dind,.local}
+      http_proxy: ${VERIFIER_HTTP_PROXY:-}
+      https_proxy: ${VERIFIER_HTTPS_PROXY:-${VERIFIER_HTTP_PROXY:-}}
+      no_proxy: ${VERIFIER_NO_PROXY:-localhost,127.0.0.1,::1,verifier-dind,.local}
+    command:
+      - "--host=tcp://0.0.0.0:2375"
+      - "--tls=false"
+    volumes:
+      - verifier-docker:/var/lib/docker
+      # 关键：把工作卷挂到和 Agent 相同的路径。
+      # docker build / docker run -v 的路径是由 daemon 解析的，
+      # 只有 daemon 也能看到同一个路径，Agent 写的文件才真的会进到被测容器里。
+      - verifier-work:/verifier/work
+    networks:
+      - verifier-net
+    restart: unless-stopped
+    # Linux 上 host.docker.internal 需要显式声明；macOS/Windows 自带，写了也无害。
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  pi-verifier:
+    build:
+      context: ./docker/verifier
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
+      args:
+        HTTP_PROXY: ${AUTOCVE_BUILD_HTTP_PROXY:-}
+        HTTPS_PROXY: ${AUTOCVE_BUILD_HTTPS_PROXY:-${AUTOCVE_BUILD_HTTP_PROXY:-}}
+        http_proxy: ${AUTOCVE_BUILD_HTTP_PROXY:-}
+        https_proxy: ${AUTOCVE_BUILD_HTTPS_PROXY:-${AUTOCVE_BUILD_HTTP_PROXY:-}}
+        PI_VERSION: ${PI_VERSION:-1.2.0}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org}
+        DOCKER_APT_MIRROR: ${DOCKER_APT_MIRROR:-download.docker.com}
+    image: autocve-pi-verifier:latest
+    container_name: autocve-pi-verifier
+    depends_on:
+      - verifier-dind
+    environment:
+      DOCKER_HOST: tcp://verifier-dind:2375
+      VERIFIER_MODEL_PROVIDER: ${VERIFIER_MODEL_PROVIDER:-deepseek}
+      VERIFIER_MODEL_ID: ${VERIFIER_MODEL_ID:-}
+      VERIFIER_MODEL_BASE_URL: ${VERIFIER_MODEL_BASE_URL:-https://api.deepseek.com/v1}
+      VERIFIER_API_KEY: ${VERIFIER_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      # 可选出口代理；服务间请求保持直连。
+      # NO_PROXY 里的 verifier-dind 和 127.0.0.1 很重要：Agent 要直连自己起的被测容器，
+      # 那些请求绝不能进代理。
+      HTTP_PROXY: ${VERIFIER_HTTP_PROXY:-}
+      HTTPS_PROXY: ${VERIFIER_HTTPS_PROXY:-${VERIFIER_HTTP_PROXY:-}}
+      NO_PROXY: ${VERIFIER_NO_PROXY:-localhost,127.0.0.1,::1,verifier-dind,host.docker.internal,.local}
+      http_proxy: ${VERIFIER_HTTP_PROXY:-}
+      https_proxy: ${VERIFIER_HTTPS_PROXY:-${VERIFIER_HTTP_PROXY:-}}
+      no_proxy: ${VERIFIER_NO_PROXY:-localhost,127.0.0.1,::1,verifier-dind,host.docker.internal,.local}
+    volumes:
+      - verifier-work:/verifier/work
+      # Agent 的配置/会话留在独立卷里，不碰宿主机的 ~/.pi
+      - verifier-pi-home:/opt/pi
+    networks:
+      - verifier-net
+    # 常驻：后端 docker exec 进来跑一次验证，装的工具链在多次验证之间复用
+    command: ["sleep", "infinity"]
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          cpus: "${VERIFIER_AGENT_CPUS:-4.0}"
+          memory: ${VERIFIER_AGENT_MEMORY:-8g}
+
+networks:
+  verifier-net:
+    driver: bridge
+
+volumes:
+  verifier-docker:
+  verifier-work:
+  verifier-pi-home:

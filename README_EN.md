@@ -1,258 +1,98 @@
-<div align="center">
+# AutoCVE · Extended source auditing
 
-# AutoCVE - One-Click CVE Discovery: Select Projects, Audit Source Code, Verify Vulnerabilities, Generate Reports, Fully Automated
+This is [yangtt57/AutoCVE](https://github.com/yangtt57/AutoCVE), a **modified fork of [larlarua/AutoCVE](https://github.com/larlarua/AutoCVE)**, starting from commit [`b26025f`](https://github.com/larlarua/AutoCVE/commit/b26025f27199ba2d93145e4a08fc9015e8d846e4). Credit for the original Agent auditing, project management, One-Click CVE, vulnerability management, and reporting belongs to the upstream authors and contributors.
 
-<img src="./docs/assets/image/logo.png" alt="AutoCVE Logo" width="72%">
+This fork adds durable source discovery, multilingual entry-point analysis, curated audit skills, an independent Pi agent that runs real PoCs in Docker, a simpler UI, and Linux/macOS deployment support. Upstream CVE results are upstream achievements; detection and false-positive improvements have not been measured for this fork.
 
+[简体中文](README.md) · [Detailed changes](docs/FORK_CHANGES.md) · [Linux/macOS deployment](docs/LINUX_DEPLOYMENT.md) · [Local development](docs/LOCAL_DEVELOPMENT.md)
 
-[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python\&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?logo=fastapi\&logoColor=white)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react\&logoColor=white)](https://react.dev/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql\&logoColor=white)](https://www.postgresql.org/)
+![AutoCVE workbench](docs/screenshots/autocve-workbench.jpg)
 
-<br>
+## Changes in this fork
 
-<p align="center">
-  <img src="./docs/assets/GIF/demo.gif" alt="AutoCVE Demo" width="72%">
-</p>
+| Area | Added behavior |
+| --- | --- |
+| Discovery v2 | Independent source analysis and Semgrep run concurrently, followed by feedback review; immutable snapshots, candidate history, evidence, coverage, resumable work, and JSONL export |
+| Scan ingestion | Preserve raw artifacts and every parseable occurrence, including duplicates; remove the first-200 indexing cap while keeping model review within its budget |
+| Languages and boundaries | Add Java, Go, C#, PHP, Ruby, Rust, Kotlin, Swift, C/C++ navigation and strengthen Python/JS/TS; organize work around entries, identities, tenants, object authorization, and sensitive operations |
+| Skills | 18 pinned adaptations from Trail of Bits, Cloudflare, and Sentry, with selective loading and provenance for actual reads |
+| Dynamic verification | Pi builds and runs target projects through a dedicated Docker-in-Docker daemon, executes PoCs, collects raw evidence, supports pause/resume, and reconciles interrupted jobs |
+| UI and coverage | A simpler visual style, audit presets, candidate filters, source evidence with line numbers, version history, and coverage based on actual source reads |
+| Deployment | Shared Linux/macOS scripts, Docker context/socket discovery, optional proxy/DNS settings, locked dependencies, multilingual parsers, Chinese PDF fonts, and platform checks |
 
-[📚 Project Documentation](#-project-documentation) ·
-[✨ Core Capabilities](#-core-capabilities) ·
-[🚀 Quick Start](#-quick-start) ·
-[🏆 CVE Results](#-cve-discovery-results)
+Entry detection and name-based call navigation are heuristics, not a complete semantic call graph. Static findings are not runtime confirmations. See the [full change notes](docs/FORK_CHANGES.md) for implementation paths and limitations.
 
-<p>
-  <a href="./README.md">简体中文</a> | <strong>English</strong>
-</p>
+## Install from this fork's source
 
-</div>
-
----
-
-## 📚 Project Documentation
-
-### 📖 [User Guide](./docs/USER_GUIDE_EN.md)
-
-Covers complete usage instructions for environment deployment, model configuration, project import, Agent auditing, one-click CVE, vulnerability management, and Skills management, and provides previews of each feature interface.
-
-### 🏗️ [Architecture Design Document](./docs/ARCHITECTURE_DESIGN_EN.md)
-
-Introduces AutoCVE's overall architecture, Agent workflow, tool orchestration, permission protection, Agent Runtime, and ReAct Loop state-machine design.
-
-### 🔌 [API Documentation](./docs/API_DOCUMENTATION_EN.md)
-
-Provides backend API, data structure, request parameter, and API debugging instructions.
-
----
-
-## ✨ Core Capabilities
-
-### 🚀 Complete CVE Discovery in One Click
-
-Automates the full workflow from project selection, repository import, audit task creation, and Agent vulnerability discovery to CVE submission report generation. Users only need to copy the report content and submit it to complete the subsequent CVE application.
-
-### 🤖 Multi-Agent Collaborative Auditing
-
-The Orchestrator centrally schedules Agents such as Recon, Scan, Triage, Finding, and Verification to collaboratively complete information collection, tool scanning, false-positive filtering, deep vulnerability discovery, and dynamic verification.
-
-```mermaid
-flowchart LR
-    O["Orchestrator"] --> R["Recon"]
-    R --> S["Scan"]
-    S --> T["Triage"]
-    R --> F["Finding"]
-    T --> V["Verification"]
-    F --> V
-    V --> M["Merge / Finalize"]
-```
-
-### 🧩 Three Audit Modes
-
-Choose enhanced scanning, intelligent auditing, or comprehensive auditing flexibly according to different audit goals, balancing scanning efficiency, discovery depth, and audit coverage.
-
-|     Audit Mode    |         Core Agent        | Applicable Scenario                        |
-| :---------: | :---------------------: | :-------------------------- |
-|  ⚡ **Enhanced Scan** |      Scan → Triage      | Quickly analyze tool scan results and filter false positives             |
-| 🧠 **Intelligent Audit** |         Finding         | Deeply discover high-value vulnerabilities; suitable for CVE and 0Day research |
-| 🔍 **Comprehensive Audit** | Scan → Triage + Finding | Combine tool scanning with source-code analysis for full-scale auditing          |
-
-### 🎯 Dedicated Agent for CVE Discovery
-
-Finding Agent is AutoCVE's core audit capability and is designed specifically for CVE discovery scenarios. It can directly analyze project source code and, together with the ReAct Loop, specialized tool calls, Nudge correction, and the structured `FinalizeFinding` termination mechanism, ultimately produce high-value vulnerabilities that meet CVE submission requirements.
-
-<details>
-<summary><strong>💬 Interactive Auditing and End-to-End Tracing</strong></summary>
-
-<br>
-
-* **User interaction support**: Treats the complete audit process as conversation context, allowing users to keep asking follow-up questions around audit results and let the Agent supplement evidence, explain attack chains, improve reproduction steps, or expand vulnerability analysis.
-* **Visual audit tracing**: Centrally displays activity logs, Agent Tree, tool calls, phase progress, preliminary reports, and audit sessions, making it easier to review the execution path and key process of each audit.
-
-</details>
-
-<details>
-<summary><strong>🗂️ Intelligent Vulnerability Management and Skills Extension</strong></summary>
-
-<br>
-
-* **Intelligent vulnerability management**: Vulnerabilities discovered during audits are automatically submitted by Agent tool calls, deduplicated, stored in structured form, and centrally maintained in the vulnerability management module.
-* **Dedicated Skills configuration**: Supports configuring dedicated Skills for different Agents according to actual needs, flexibly extending the capability boundaries of each Agent.
-
-</details>
-
----
-
-## 🚀 Quick Start
-
-### ⚡ One-Line Deployment Command
-
-No need to clone the repository. Start it with one command:
+Install Git, Docker, and Docker Compose **2.24+**. Use Docker Engine on Linux, or Docker Desktop/Colima on macOS.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/larlarua/AutoCVE/v1.0.0/docker-compose.prod.yml \
-  | docker compose -f - up -d
-```
-
-### 🛠️ Source Deployment
-
-Suitable for local development, feature debugging, or secondary development:
-
-```bash
-git clone https://github.com/larlarua/AutoCVE.git
+git clone https://github.com/yangtt57/AutoCVE.git
 cd AutoCVE
-docker compose up -d --build
+cp .env.example .env
+cp backend/env.example backend/.env
 ```
 
-### 🌐 Service Access
+Before starting:
 
-After the services start, access them through the following addresses:
+- Set `POSTGRES_PASSWORD` in `.env` for a new database. Changing it does not rotate the password of an existing volume.
+- Set `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`, and `LLM_BASE_URL` in `backend/.env` to match your provider.
+- Replace `SECRET_KEY` with a random value, for example one generated by `openssl rand -hex 32`.
 
-| Service          | Access URL                       | Purpose           |
-| :---------- | :------------------------- | :----------- |
-| 🖥️ Frontend      | http://localhost:3000      | AutoCVE user interface |
-| ⚙️ Backend API   | http://localhost:8000      | Backend API service       |
-| 📘 Swagger  | http://localhost:8000/docs | API documentation and debugging  |
-| 🗄️ Adminer | http://localhost:8080      | Database management        |
+```bash
+./scripts/check-platform.sh
+./scripts/compose.sh build backend frontend sandbox static-scanner
+./scripts/compose.sh up -d db redis backend agent-worker one-click-cve-worker frontend
+./scripts/compose.sh ps
+```
 
-> [!TIP]
-> **Quickly Experience the Complete Audit Workflow**
->
-> Configure model → Import project → Create audit task → Track real-time audit → Manage vulnerabilities → Edit or export report
+Database migrations run on backend startup. Open `http://localhost:3000` (or your server's address); local API docs are at `http://localhost:8000/docs`. The initial administrator demo account is `demo@example.com` / `demo123`; change its password in account settings before exposing the service. Seeded demo findings are not results produced by this fork.
 
----
+Use the source build above: retained `docker-compose.prod*.yml` files use upstream v1.0.5 images and do not include these additions.
 
-## 🏆 CVE Discovery Results
+### Optional: independent Pi verification
 
-<p align="left">
-  <img src="https://img.shields.io/badge/CVE-30-success?style=for-the-badge" alt="30 CVEs">
-  <img src="https://img.shields.io/badge/Projects-14-blue?style=for-the-badge" alt="14 Projects">
-  <img src="https://img.shields.io/badge/Max%20CVSS-9.9-critical?style=for-the-badge" alt="Max CVSS 9.9">
-  <img src="https://img.shields.io/badge/Test%20Period-7%20Days-orange?style=for-the-badge" alt="7 Days">
-</p>
+In `backend/.env`, set `VERIFICATION_AGENT_ENABLED=true`, `VERIFICATION_AGENT_MODEL_PROVIDER` to the same provider as `LLM_PROVIDER`, and `VERIFICATION_AGENT_MODEL_ID` to the same model as `LLM_MODEL`. Keep `VERIFICATION_AGENT_MAX_CONCURRENCY=1` initially.
 
-> [!NOTE]
-> During one week of testing, AutoCVE discovered and submitted **30 security vulnerabilities**, covering **14 open-source projects**.
->
-> Click the CVE identifiers in the table to view official records. Complete vulnerability reports are collected in
-> **[larlarua/vulnerability-reports](https://github.com/larlarua/vulnerability-reports/)**.
+```bash
+./scripts/verify-stack.sh up -d --build
+./scripts/compose.sh up -d backend agent-worker one-click-cve-worker
+./scripts/verify-stack.sh ps
+# Optional: makes a real model request and consumes API usage
+./scripts/verify-stack.sh smoke
+```
 
-<details open>
-<summary><strong>🔍 View CVE Result Details (30)</strong></summary>
+The script reads `LLM_*` settings for the verifier; explicit `VERIFIER_*` settings can select a separate model. The container currently uses an OpenAI Chat Completions compatible protocol. Pi does not mount the host Docker socket, but its dedicated daemon uses privileged DinD, which is not VM isolation. See [verification setup and boundaries](docs/DYNAMIC_VERIFICATION.md).
 
-<br>
+## Use
 
-| CVE ID | Project | Project Popularity | Vulnerability Type | CVSS | Vulnerability Details |
-|:---:|:---:|:---:|:---:|:----:|:----:|
-| [CVE-2026-40904](https://www.cve.org/CVERecord?id=CVE-2026-40904) |  Chartbrew  |   ![Stars](https://img.shields.io/github/stars/chartbrew/chartbrew?style=social)   | Improper Access Control | **8.1** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-40904/detail_en.md) |
-| [CVE-2026-40603](https://www.cve.org/CVERecord?id=CVE-2026-40603) |  Chartbrew  |   ![Stars](https://img.shields.io/github/stars/chartbrew/chartbrew?style=social)   | Improper Access Control | **6.5** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-40603/detail_en.md) |
-| [CVE-2026-40601](https://www.cve.org/CVERecord?id=CVE-2026-40601) |  Chartbrew  |   ![Stars](https://img.shields.io/github/stars/chartbrew/chartbrew?style=social)   | Missing Authorization   | **7.5** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-40601/detail_en.md) |
-| [CVE-2026-40600](https://www.cve.org/CVERecord?id=CVE-2026-40600) |  Chartbrew  |   ![Stars](https://img.shields.io/github/stars/chartbrew/chartbrew?style=social)   | Improper Access Control | **8.1** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-40600/detail_en.md) |
-| [CVE-2026-40595](https://www.cve.org/CVERecord?id=CVE-2026-40595) |  Chartbrew  |   ![Stars](https://img.shields.io/github/stars/chartbrew/chartbrew?style=social)   | Improper Access Control | **7.5** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-40595/detail_en.md) |
-| [CVE-2026-42181](https://www.cve.org/CVERecord?id=CVE-2026-42181) |    Lemmy    |      ![Stars](https://img.shields.io/github/stars/LemmyNet/lemmy?style=social)     | SSRF                    | **6.5** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-42181/detail_en.md) |
-| [CVE-2026-42180](https://www.cve.org/CVERecord?id=CVE-2026-42180) |    Lemmy    |      ![Stars](https://img.shields.io/github/stars/LemmyNet/lemmy?style=social)     | SSRF                    | **6.3** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-42180/detail_en.md) |
-|  [CVE-2026-7290](https://www.cve.org/CVERecord?id=CVE-2026-7290)  |  JeecgBoot  |   ![Stars](https://img.shields.io/github/stars/jeecgboot/JeecgBoot?style=social)   | SQL Injection           | **6.3** |  [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-7290/detail_en.md) |
-|  [CVE-2026-7291](https://www.cve.org/CVERecord?id=CVE-2026-7291)  |     o2oa    |        ![Stars](https://img.shields.io/github/stars/o2oa/o2oa?style=social)        | SSRF                    | **6.3** |  [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-7291/detail_en.md) |
-|  [CVE-2026-7292](https://www.cve.org/CVERecord?id=CVE-2026-7292)  |     o2oa    |        ![Stars](https://img.shields.io/github/stars/o2oa/o2oa?style=social)        | RCE                     | **5.6** |  [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-7292/detail_en.md) |
-|  [CVE-2026-7303](https://www.cve.org/CVERecord?id=CVE-2026-7303)  |   xxl-job   |     ![Stars](https://img.shields.io/github/stars/xuxueli/xxl-job?style=social)     | Improper Access Control | **3.7** |   [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-7303/detail.md)   |
-|  [CVE-2026-7305](https://www.cve.org/CVERecord?id=CVE-2026-7305)  |   xxl-job   |     ![Stars](https://img.shields.io/github/stars/xuxueli/xxl-job?style=social)     | SSRF                    | **6.3** |   [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-7305/detail.md)   |
-|  [CVE-2026-7306](https://www.cve.org/CVERecord?id=CVE-2026-7306)  |   xxl-job   |     ![Stars](https://img.shields.io/github/stars/xuxueli/xxl-job?style=social)     | Hard-coded Key          | **5.6** |   [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-7306/detail.md)   |
-| [CVE-2026-40610](https://www.cve.org/CVERecord?id=CVE-2026-40610) |   BentoML   |     ![Stars](https://img.shields.io/github/stars/bentoml/BentoML?style=social)     | Link Following          | **5.5** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-40610/detail_en.md) |
-| [CVE-2026-48763](https://www.cve.org/CVERecord?id=CVE-2026-48763) |  typebot.io | ![Stars](https://img.shields.io/github/stars/baptisteArno/typebot.io?style=social) | Missing Authorization   | **8.2** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-48763/detail_en.md) |
-| [CVE-2026-48764](https://www.cve.org/CVERecord?id=CVE-2026-48764) |  typebot.io | ![Stars](https://img.shields.io/github/stars/baptisteArno/typebot.io?style=social) | SSRF                    | **8.2** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-48764/detail_en.md) |
-| [CVE-2026-48765](https://www.cve.org/CVERecord?id=CVE-2026-48765) |  typebot.io | ![Stars](https://img.shields.io/github/stars/baptisteArno/typebot.io?style=social) | Authorization Bypass    | **9.9** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-48765/detail_en.md) |
-| [CVE-2026-48766](https://www.cve.org/CVERecord?id=CVE-2026-48766) |  typebot.io | ![Stars](https://img.shields.io/github/stars/baptisteArno/typebot.io?style=social) | Sensitive Data Exposure | **7.6** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-48766/detail_en.md) |
-| [CVE-2026-48767](https://www.cve.org/CVERecord?id=CVE-2026-48767) |  typebot.io | ![Stars](https://img.shields.io/github/stars/baptisteArno/typebot.io?style=social) | Sensitive Data Exposure | **7.6** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-48767/detail_en.md) |
-| [CVE-2026-45296](https://www.cve.org/CVERecord?id=CVE-2026-45296) |  OpenReplay |  ![Stars](https://img.shields.io/github/stars/openreplay/openreplay?style=social)  | Improper Access Control | **7.7** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-45296/detail_en.md) |
-| [CVE-2026-46372](https://www.cve.org/CVERecord?id=CVE-2026-46372) | SillyTavern | ![Stars](https://img.shields.io/github/stars/SillyTavern/SillyTavern?style=social) | SSRF                    | **8.5** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-46372/detail_en.md) |
-| [CVE-2026-45260](https://www.cve.org/CVERecord?id=CVE-2026-45260) |   pimcore   |     ![Stars](https://img.shields.io/github/stars/pimcore/pimcore?style=social)     | Missing Authorization   | **8.1** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-45260/detail_en.md) |
-| [CVE-2026-41235](https://www.cve.org/CVERecord?id=CVE-2026-41235) |   froxlor   |     ![Stars](https://img.shields.io/github/stars/froxlor/froxlor?style=social)     | Incorrect Authorization | **8.8** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-41235/detail_en.md) |
-| [CVE-2026-41236](https://www.cve.org/CVERecord?id=CVE-2026-41236) |   froxlor   |     ![Stars](https://img.shields.io/github/stars/froxlor/froxlor?style=social)     | Link Following          | **8.8** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-41236/detail_en.md) |
-| [CVE-2026-43984](https://www.cve.org/CVERecord?id=CVE-2026-43984) |   Tautulli  |    ![Stars](https://img.shields.io/github/stars/Tautulli/Tautulli?style=social)    | Stored XSS              | **8.9** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-43984/detail_en.md) |
-| [CVE-2026-43985](https://www.cve.org/CVERecord?id=CVE-2026-43985) |   Tautulli  |    ![Stars](https://img.shields.io/github/stars/Tautulli/Tautulli?style=social)    | CSRF                    | **8.8** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-43985/detail_en.md) |
-| [CVE-2026-43986](https://www.cve.org/CVERecord?id=CVE-2026-43986) |   Tautulli  |    ![Stars](https://img.shields.io/github/stars/Tautulli/Tautulli?style=social)    | SSRF                    | **9.9** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-43986/detail_en.md) |
-| [CVE-2026-54091](https://www.cve.org/CVERecord?id=CVE-2026-54091) | filebrowser | ![Stars](https://img.shields.io/github/stars/filebrowser/filebrowser?style=social) | Incorrect Authorization | **7.5** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-54091/detail_en.md) |
-| [CVE-2026-50279](https://www.cve.org/CVERecord?id=CVE-2026-50279) |   craftcms  |       ![Stars](https://img.shields.io/github/stars/craftcms/cms?style=social)      | Improper Authorization  | **6.5** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-50279/detail_en.md) |
-| [CVE-2026-50280](https://www.cve.org/CVERecord?id=CVE-2026-50280) |   craftcms  |       ![Stars](https://img.shields.io/github/stars/craftcms/cms?style=social)      | Improper Access Control | **6.5** | [View Details](https://github.com/larlarua/vulnerability-reports/blob/main/CVE-2026-50280/detail_en.md) |
+1. Configure the audit model and import a Git repository, ZIP, or local project. In Compose, put local sources under `projects/` and use `/workspace/projects/<directory>` in the UI.
+2. Create an audit, select the project/version and preset. The creation dialog enables source discovery and the coverage ledger by default.
+3. Open the candidates/coverage panel for evidence, raw observations, unresolved work, history, and exports. Resume when schedulable work remains.
+4. Use One-Click CVE or disable discovery v2 to follow the original workflow. Discovery candidates remain in a separate ledger and are not automatically promoted to verified vulnerabilities.
+5. For an existing vulnerability record, select dynamic verification in vulnerability management. Inspect the environment, commands, HTTP exchanges, verdict, and limitations; pause/resume or export the report as needed.
 
-</details>
+Dynamic verdicts do not currently rewrite existing report statuses or CVSS scores. Framework detection, static evidence, and runtime evidence have distinct scopes.
 
----
+## Maintenance and development
 
+```bash
+./scripts/compose.sh logs --tail 100 backend agent-worker
+./scripts/verify-stack.sh logs --tail 100 pi-verifier verifier-dind
+./scripts/compose.sh stop
+./scripts/verify-stack.sh stop
+```
 
-## ⚠️ Security and Compliance
+Stop commands preserve volumes. Back up the database, uploads, project sources, skills, and report templates before upgrading. See [deployment](docs/LINUX_DEPLOYMENT.md) for networking, mounts, migration, and platform verification limits.
 
-> [!WARNING]
->
-> This project is only for authorized security research, code auditing, and learning or communication. It is strictly prohibited to use it for any unauthorized vulnerability scanning, penetration testing, or security assessment.
->
-> Ensure that scanning, vulnerability verification, or PoC testing is performed only against targets and environments with explicit authorization.
+Native development uses Python 3.12, uv, Node.js 22.19+, npm, and PDF system libraries. After [preparing dependencies](docs/LOCAL_DEVELOPMENT.md), run `./start.sh` and open `http://localhost:5173`; stop with `./stop.sh`.
 
-> [!IMPORTANT]
->
-> When submitting vulnerabilities, follow the target project's security policy and vulnerability disclosure guidelines, including but not limited to:
->
-> * `SECURITY.md`
-> * GitHub Private Vulnerability Reporting
-> * CNA submission process
-> * Other responsible vulnerability disclosure mechanisms
+Detailed guides (Chinese): [discovery/API](docs/DISCOVERY_V2.md), [detection and UI](docs/DETECTION_AND_UX.md), [skills](docs/SKILLS_INTEGRATION.md), [dynamic verification](docs/DYNAMIC_VERIFICATION.md). The [upstream feature guide](docs/USER_GUIDE_EN.md) remains available; use this README for installation.
 
----
+## Attribution and license
 
-## 💬 Communication and Feedback
+The project retains upstream Git history and the [AGPL-3.0 license](LICENSE). Thanks to [larlarua/AutoCVE](https://github.com/larlarua/AutoCVE) and its contributors. Upstream also credits [DeepAudit](https://github.com/lintsinghua/DeepAudit) for early architectural inspiration.
 
-> [!TIP]
->
-> AutoCVE was originally designed to explore the application and practice of Agents in automated CVE discovery scenarios. At present, the project is still continuously iterating and improving, and both the architecture design and feature implementation have many areas that need refinement. Everyone is welcome to submit Issues and PRs, share usage feedback, or suggest features to jointly improve AutoCVE's reliability and practicality.
->
-> You are also welcome to contact me anytime for discussion. Whether it is a technical question, feature suggestion, or doubt encountered during CVE discovery, you can reach me through the following methods:
->
-> * 📧 **Email:** [359111529@qq.com](mailto:359111529@qq.com)
-> * 🐙 **GitHub:** [@larlarua](https://github.com/larlarua)
+Third-party skill material retains its own notices and licenses: Trail of Bits (CC-BY-SA-4.0), Cloudflare (MIT), and Sentry (Apache-2.0, with some OWASP references under CC-BY-SA-4.0). See each package's `NOTICE.md`, the [source manifest](skills_sources_manifest.json), and [archive documentation](skill_sources/README.md).
 
----
-
-## 🙏 Acknowledgements
-
-> [!NOTE]
->
-> In its early development stage, AutoCVE referenced and learned from the engineering architecture of [DeepAudit](https://github.com/lintsinghua/DeepAudit), which provided important support for the project’s rapid start.
->
-> We would like to express our sincere gratitude to the DeepAudit project and its developers.
-
-<details>
-<summary><strong>🧩 About AutoCVE’s Engineering Design</strong></summary>
-
-<br>
-
-Building on engineering experience from relevant open-source projects, AutoCVE has been redesigned and customized for the automated CVE discovery scenario at the overall Agent engineering level. Key work includes audit workflow orchestration, ReAct Loop engineering reconstruction, state machine scheduling, loop control and termination judgment, tool orchestration, report generation, the Skill mechanism, and conversational interaction capabilities.
-
-Going forward, AutoCVE will continue to iterate and improve, further enhancing its automation, audit depth, and practical effectiveness in vulnerability discovery scenarios.
-
-</details>
-
----
-
-## License
-
-This project is released under [AGPL-3.0](./LICENSE).
+Report fork-specific issues at [yangtt57/AutoCVE](https://github.com/yangtt57/AutoCVE/issues). Retaining upstream's usage requirement, use this project only for authorized security research and auditing, and follow the target project's disclosure policy.

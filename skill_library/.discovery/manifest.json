@@ -1,0 +1,998 @@
+{
+  "schema_version": 1,
+  "catalog_version": "2026.10.16.1",
+  "packages": {
+    "autocve-code-audit": {
+      "slug": "autocve-code-audit",
+      "name": "Web/API 主审计方法",
+      "description": "沿用本项目 code-audit-finding 的入口、信任边界与对象授权审计方法，适配 discovery_v2。",
+      "upstream_repo": "AutoCVE/local",
+      "upstream_commit": "b26025f27199ba2d93145e4a08fc9015e8d846e4",
+      "license": "Project license",
+      "source_paths": [
+        "skill_library/code-audit-finding/SKILL.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage"
+      ],
+      "applicable_scenarios": [
+        "web_api"
+      ],
+      "stages": [
+        "independent",
+        "feedback",
+        "expansion"
+      ],
+      "category": "method",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "skill_library/code-audit-finding/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "skill_library/code-audit-finding/SKILL.md"
+          ],
+          "sha256": "1b02c7eb03f4bef48905f8bccc9070ffb253aadd0f027409a6640939b41219bd"
+        }
+      },
+      "runtime": "discovery_v2"
+    },
+    "autocve-context-building": {
+      "slug": "autocve-context-building",
+      "name": "源码上下文与契约",
+      "description": "针对当前问题建立函数、调用者和资源契约上下文，不要求逐函数遍历全仓库。",
+      "upstream_repo": "https://github.com/trailofbits/skills",
+      "upstream_commit": "1f68e03536f7980d4c0e6869596f708043a19443",
+      "license": "CC-BY-SA-4.0",
+      "source_paths": [
+        "plugins/audit-context-building/skills/audit-context-building/SKILL.md",
+        "plugins/audit-context-building/skills/audit-context-building/resources/ANALYSIS_FORMAT.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage"
+      ],
+      "applicable_scenarios": [
+        "all_source"
+      ],
+      "stages": [
+        "independent",
+        "feedback",
+        "expansion"
+      ],
+      "category": "method",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "plugins/audit-context-building/skills/audit-context-building/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "plugins/audit-context-building/skills/audit-context-building/SKILL.md",
+            "plugins/audit-context-building/skills/audit-context-building/resources/ANALYSIS_FORMAT.md"
+          ],
+          "sha256": "61a853a983e36b0c51ce420ec8aa2ab4823b266683144455b64907367ec0b78a"
+        },
+        "references/analysis-format.md": {
+          "source_paths": [
+            "plugins/audit-context-building/skills/audit-context-building/resources/ANALYSIS_FORMAT.md"
+          ],
+          "sha256": "029532945776fb0fcbc866f19cd6114fe4152cd3dea1c0f44b266ec13a2cc6e8"
+        }
+      },
+      "runtime": "discovery_v2"
+    },
+    "autocve-variant-analysis": {
+      "slug": "autocve-variant-analysis",
+      "name": "根因驱动的变体追踪",
+      "description": "仅在已有带源码证据的候选及具体根因问题时使用，不能把相似字符串当成同一漏洞。",
+      "upstream_repo": "https://github.com/trailofbits/skills",
+      "upstream_commit": "1f68e03536f7980d4c0e6869596f708043a19443",
+      "license": "CC-BY-SA-4.0",
+      "source_paths": [
+        "plugins/variant-analysis/skills/variant-analysis/SKILL.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage",
+        "GetCandidate",
+        "GetEvidence",
+        "UpdateCandidate",
+        "RequestFollowup"
+      ],
+      "applicable_scenarios": [
+        "root_cause"
+      ],
+      "stages": [
+        "feedback",
+        "expansion"
+      ],
+      "category": "specialty",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "plugins/variant-analysis/skills/variant-analysis/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "plugins/variant-analysis/skills/variant-analysis/SKILL.md"
+          ],
+          "sha256": "8e8b2c53d3b282e49dd1b2642c43526da5565fcca98e5bae7da90c8f5c8ffe8b"
+        },
+        "references/root-cause-and-variants.md": {
+          "sha256": "0357eff35e3af243a139e408bc17042d3953c6014c5c06d30490939b92128969",
+          "source_paths": [
+            "plugins/variant-analysis/skills/variant-analysis/SKILL.md"
+          ]
+        }
+      },
+      "runtime": "discovery_v2",
+      "default_resources": [
+        "references/root-cause-and-variants.md"
+      ]
+    },
+    "autocve-sharp-edges": {
+      "slug": "autocve-sharp-edges",
+      "name": "SDK/API 易误用设计",
+      "description": "检查库、SDK、CLI 和配置接口是否让正常调用容易偏离安全契约。",
+      "upstream_repo": "https://github.com/trailofbits/skills",
+      "upstream_commit": "1f68e03536f7980d4c0e6869596f708043a19443",
+      "license": "CC-BY-SA-4.0",
+      "source_paths": [
+        "plugins/sharp-edges/skills/sharp-edges/SKILL.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage"
+      ],
+      "applicable_scenarios": [
+        "library_sdk",
+        "cli",
+        "configuration"
+      ],
+      "stages": [
+        "independent",
+        "feedback",
+        "expansion"
+      ],
+      "category": "specialty",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "plugins/sharp-edges/skills/sharp-edges/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "plugins/sharp-edges/skills/sharp-edges/SKILL.md"
+          ],
+          "sha256": "35f51d234e27b177d98f11fe581ea87db9ea63b62044db06225994190fc1a2b2"
+        }
+      },
+      "runtime": "discovery_v2"
+    },
+    "autocve-insecure-defaults": {
+      "slug": "autocve-insecure-defaults",
+      "name": "默认配置与失败路径",
+      "description": "检查备用密钥、默认账户、宽松访问、弱安全选项、调试泄漏和认证失败后放行。",
+      "upstream_repo": "https://github.com/trailofbits/skills",
+      "upstream_commit": "1f68e03536f7980d4c0e6869596f708043a19443",
+      "license": "CC-BY-SA-4.0",
+      "source_paths": [
+        "plugins/insecure-defaults/commands/audit.md",
+        "plugins/insecure-defaults/references/fallback-secrets.md",
+        "plugins/insecure-defaults/references/fail-open-security.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage"
+      ],
+      "applicable_scenarios": [
+        "configuration",
+        "library_sdk",
+        "cli"
+      ],
+      "stages": [
+        "independent",
+        "feedback",
+        "expansion"
+      ],
+      "category": "specialty",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "plugins/insecure-defaults/commands/audit.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "plugins/insecure-defaults/commands/audit.md",
+            "plugins/insecure-defaults/references/fallback-secrets.md",
+            "plugins/insecure-defaults/references/fail-open-security.md"
+          ],
+          "sha256": "49adf566b534aabf149bf34c128e01a30e50cb8db0be5afd7dae6ad75813b47b"
+        }
+      },
+      "runtime": "discovery_v2"
+    },
+    "autocve-sarif-interpretation": {
+      "slug": "autocve-sarif-interpretation",
+      "name": "SARIF 结果解释",
+      "description": "用于已提供 SARIF 语义的反馈材料，不承担导入、分页、索引、过滤或扫描执行。",
+      "upstream_repo": "https://github.com/trailofbits/skills",
+      "upstream_commit": "1f68e03536f7980d4c0e6869596f708043a19443",
+      "license": "CC-BY-SA-4.0",
+      "source_paths": [
+        "plugins/static-analysis/skills/sarif-parsing/SKILL.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage",
+        "GetScanObservation",
+        "SubmitFeedbackDecisions",
+        "UpdateCandidate"
+      ],
+      "applicable_scenarios": [
+        "sarif"
+      ],
+      "stages": [
+        "feedback",
+        "expansion"
+      ],
+      "category": "specialty",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "plugins/static-analysis/skills/sarif-parsing/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "plugins/static-analysis/skills/sarif-parsing/SKILL.md"
+          ],
+          "sha256": "0f8128283e83a3c3812c25691be87d263004a27590eed5d6ac47240abc015f57"
+        }
+      },
+      "runtime": "discovery_v2"
+    },
+    "autocve-semgrep-feedback": {
+      "slug": "autocve-semgrep-feedback",
+      "name": "Semgrep 源码反馈",
+      "description": "解释分配给当前反馈工作包的 Semgrep observation，扫描仍由 ScanPipeline 统一执行。",
+      "upstream_repo": "https://github.com/trailofbits/skills",
+      "upstream_commit": "1f68e03536f7980d4c0e6869596f708043a19443",
+      "license": "CC-BY-SA-4.0",
+      "source_paths": [
+        "plugins/static-analysis/skills/semgrep/SKILL.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage",
+        "GetScanObservation",
+        "SubmitFeedbackDecisions",
+        "UpdateCandidate"
+      ],
+      "applicable_scenarios": [
+        "semgrep"
+      ],
+      "stages": [
+        "feedback",
+        "expansion"
+      ],
+      "category": "specialty",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "plugins/static-analysis/skills/semgrep/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "plugins/static-analysis/skills/semgrep/SKILL.md"
+          ],
+          "sha256": "437e5ea3b42ec1c028e27cef107eabfeef67bfeb01afaca76967b67088da5ba8"
+        }
+      },
+      "runtime": "discovery_v2"
+    },
+    "autocve-native-c-review": {
+      "slug": "autocve-native-c-review",
+      "name": "C/C++ 用户态源码审计",
+      "description": "适用于 C/C++ 用户态程序、库、解析器；当前是源码检查，不提供内核、驱动、裸机或二进制分析能力。",
+      "upstream_repo": "https://github.com/trailofbits/skills",
+      "upstream_commit": "1f68e03536f7980d4c0e6869596f708043a19443",
+      "license": "CC-BY-SA-4.0",
+      "source_paths": [
+        "plugins/c-review/skills/c-review/SKILL.md",
+        "plugins/c-review/agents/c-review-worker.md",
+        "plugins/c-review/workflows/c-review.js"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage"
+      ],
+      "applicable_scenarios": [
+        "c",
+        "cpp",
+        "native",
+        "parser"
+      ],
+      "stages": [
+        "independent",
+        "feedback",
+        "expansion"
+      ],
+      "category": "specialty",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "plugins/c-review/skills/c-review/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "plugins/c-review/skills/c-review/SKILL.md",
+            "plugins/c-review/agents/c-review-worker.md"
+          ],
+          "sha256": "586d8aa0f1d108292162f9afb0dd5b1c860dbdeb309c88c8420d3dfa52abd37a"
+        },
+        "references/source-review-matrix.md": {
+          "sha256": "c1455ea706d83fbcfaab88e21d59d9b7ef9c708f4302d24970d950d8d4ad6237",
+          "source_paths": [
+            "plugins/c-review/workflows/c-review.js",
+            "plugins/c-review/skills/c-review/SKILL.md"
+          ]
+        }
+      },
+      "runtime": "discovery_v2",
+      "default_resources": [
+        "references/source-review-matrix.md"
+      ]
+    },
+    "autocve-rust-review": {
+      "slug": "autocve-rust-review",
+      "name": "Rust safe/unsafe 与并发",
+      "description": "适用于 Rust 用户态 crate、服务和库，按实际出现的 unsafe、FFI、并发与异步能力检查。",
+      "upstream_repo": "https://github.com/trailofbits/skills",
+      "upstream_commit": "1f68e03536f7980d4c0e6869596f708043a19443",
+      "license": "CC-BY-SA-4.0",
+      "source_paths": [
+        "plugins/rust-review/skills/rust-review/SKILL.md",
+        "plugins/rust-review/prompts/clusters/unsafe-boundary.md",
+        "plugins/rust-review/prompts/clusters/async-runtime.md",
+        "plugins/rust-review/prompts/clusters/ffi-cross-language.md",
+        "plugins/rust-review/prompts/clusters/concurrency-locking.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage"
+      ],
+      "applicable_scenarios": [
+        "rust"
+      ],
+      "stages": [
+        "independent",
+        "feedback",
+        "expansion"
+      ],
+      "category": "specialty",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "plugins/rust-review/skills/rust-review/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "plugins/rust-review/skills/rust-review/SKILL.md",
+            "plugins/rust-review/prompts/clusters/unsafe-boundary.md",
+            "plugins/rust-review/prompts/clusters/async-runtime.md"
+          ],
+          "sha256": "1a468b01b7e748849a662aeb1869c029e83a3878855eca4b063099bc2987ae91"
+        },
+        "references/unsafe-and-lifecycle.md": {
+          "sha256": "5deaa697b1690f8d676be13aef005f524c40909adbc200b84a8fbc2f180d7ee6",
+          "source_paths": [
+            "plugins/rust-review/prompts/clusters/unsafe-boundary.md",
+            "plugins/rust-review/prompts/clusters/ffi-cross-language.md"
+          ]
+        },
+        "references/async-and-locks.md": {
+          "sha256": "a5ae1ce22f7a9f7abf08c3da012f6b2aeab8dd153c7ee334d020cdd9238db241",
+          "source_paths": [
+            "plugins/rust-review/prompts/clusters/concurrency-locking.md",
+            "plugins/rust-review/prompts/clusters/async-runtime.md"
+          ]
+        }
+      },
+      "runtime": "discovery_v2",
+      "default_resources": [
+        "references/unsafe-and-lifecycle.md",
+        "references/async-and-locks.md"
+      ]
+    },
+    "autocve-differential-review": {
+      "slug": "autocve-differential-review",
+      "name": "变更影响审计",
+      "description": "仅在任务明确给出当前快照中的变更范围与可信比较依据时使用。",
+      "upstream_repo": "https://github.com/trailofbits/skills",
+      "upstream_commit": "1f68e03536f7980d4c0e6869596f708043a19443",
+      "license": "CC-BY-SA-4.0",
+      "source_paths": [
+        "plugins/differential-review/skills/differential-review/SKILL.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage"
+      ],
+      "applicable_scenarios": [
+        "explicit_diff"
+      ],
+      "stages": [
+        "independent",
+        "feedback",
+        "expansion"
+      ],
+      "category": "specialty",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "plugins/differential-review/skills/differential-review/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "plugins/differential-review/skills/differential-review/SKILL.md"
+          ],
+          "sha256": "6fbcb1637cdc4d29f1c55bb5f6ff73f0c6a1110bea1bea594e4de9eebce067bc"
+        }
+      },
+      "runtime": "discovery_v2"
+    },
+    "autocve-spec-compliance": {
+      "slug": "autocve-spec-compliance",
+      "name": "规范与实现对应",
+      "description": "仅当工作包提供独立规范依据时使用；实现代码本身不能反推成“权威规则”。",
+      "upstream_repo": "https://github.com/trailofbits/skills",
+      "upstream_commit": "1f68e03536f7980d4c0e6869596f708043a19443",
+      "license": "CC-BY-SA-4.0",
+      "source_paths": [
+        "plugins/spec-to-code-compliance/skills/spec-to-code-compliance/SKILL.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage"
+      ],
+      "applicable_scenarios": [
+        "explicit_spec"
+      ],
+      "stages": [
+        "independent",
+        "feedback",
+        "expansion"
+      ],
+      "category": "specialty",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "plugins/spec-to-code-compliance/skills/spec-to-code-compliance/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "plugins/spec-to-code-compliance/skills/spec-to-code-compliance/SKILL.md"
+          ],
+          "sha256": "37ae20748652f93a8d05956e4ebe01689955bd987f6c6ad08c9c4567787de68f"
+        }
+      },
+      "runtime": "discovery_v2"
+    },
+    "autocve-supply-chain": {
+      "slug": "autocve-supply-chain",
+      "name": "依赖与发布信任",
+      "description": "只检查当前源码中的依赖解析、锁文件、注册表选择、安装步骤和发布消费链。",
+      "upstream_repo": "https://github.com/trailofbits/skills",
+      "upstream_commit": "1f68e03536f7980d4c0e6869596f708043a19443",
+      "license": "CC-BY-SA-4.0",
+      "source_paths": [
+        "plugins/supply-chain-risk-auditor/skills/supply-chain-risk-auditor/SKILL.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage"
+      ],
+      "applicable_scenarios": [
+        "dependencies",
+        "supply_chain"
+      ],
+      "stages": [
+        "independent",
+        "feedback",
+        "expansion"
+      ],
+      "category": "specialty",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "plugins/supply-chain-risk-auditor/skills/supply-chain-risk-auditor/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "plugins/supply-chain-risk-auditor/skills/supply-chain-risk-auditor/SKILL.md"
+          ],
+          "sha256": "bf11941d0e7f6dfa17d38466a442053f42db766a6a53f856a1c057e0ef4d8bc7"
+        }
+      },
+      "runtime": "discovery_v2"
+    },
+    "autocve-agentic-actions": {
+      "slug": "autocve-agentic-actions",
+      "name": "AI Agent CI 权限边界",
+      "description": "仅用于调用 LLM/Agent 的工作流，追踪事件内容进入模型后能够触发的权限。",
+      "upstream_repo": "https://github.com/trailofbits/skills",
+      "upstream_commit": "1f68e03536f7980d4c0e6869596f708043a19443",
+      "license": "CC-BY-SA-4.0",
+      "source_paths": [
+        "plugins/agentic-actions-auditor/skills/agentic-actions-auditor/SKILL.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage"
+      ],
+      "applicable_scenarios": [
+        "github_actions",
+        "ai_agent"
+      ],
+      "stages": [
+        "independent",
+        "feedback",
+        "expansion"
+      ],
+      "category": "specialty",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "plugins/agentic-actions-auditor/skills/agentic-actions-auditor/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "plugins/agentic-actions-auditor/skills/agentic-actions-auditor/SKILL.md"
+          ],
+          "sha256": "5048e81562ae5c6288a836ab957b0bdacb308986e4e305174b4bb9be91e55f51"
+        }
+      },
+      "runtime": "discovery_v2"
+    },
+    "autocve-django-access": {
+      "slug": "autocve-django-access",
+      "name": "Django/DRF 对象授权",
+      "description": "仅检测到 Django/DRF 时使用；审阅整个工作包及相关调用上下文，不限于 diff。",
+      "upstream_repo": "https://github.com/getsentry/skills",
+      "upstream_commit": "f57ada2d0b640406ea7e25b11d636c530e77c58b",
+      "license": "Apache-2.0 AND CC-BY-SA-4.0",
+      "source_paths": [
+        "skills/django-access-review/SKILL.md",
+        "skills/django-access-review/references/django-views.md",
+        "skills/django-access-review/references/django-orm.md",
+        "skills/django-access-review/references/drf-permissions.md",
+        "skills/django-access-review/references/tenant-isolation.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage"
+      ],
+      "applicable_scenarios": [
+        "django",
+        "drf"
+      ],
+      "stages": [
+        "independent",
+        "feedback",
+        "expansion"
+      ],
+      "category": "specialty",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "skills/django-access-review/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "skills/django-access-review/SKILL.md"
+          ],
+          "sha256": "619a729f910be5e5e6d4a2ada69021048cccc6dde569e272d5c53cd106d94669"
+        },
+        "references/authorization-layers.md": {
+          "sha256": "d28d1a3c61931ab47292c43592f3087217a642de59ab3e02d2eb4ab4875ecc07",
+          "source_paths": [
+            "skills/django-access-review/references/django-views.md",
+            "skills/django-access-review/references/django-orm.md",
+            "skills/django-access-review/references/drf-permissions.md",
+            "skills/django-access-review/references/tenant-isolation.md"
+          ]
+        }
+      },
+      "runtime": "discovery_v2",
+      "default_resources": [
+        "references/authorization-layers.md"
+      ]
+    },
+    "autocve-secret-serialization": {
+      "slug": "autocve-secret-serialization",
+      "name": "凭据对象与序列化出口",
+      "description": "适用于 Python、JavaScript、TypeScript 的凭据对象、自动序列化及日志/追踪/响应出口。",
+      "upstream_repo": "https://github.com/getsentry/skills",
+      "upstream_commit": "f57ada2d0b640406ea7e25b11d636c530e77c58b",
+      "license": "Apache-2.0",
+      "source_paths": [
+        "skills/secret-serialization/SKILL.md",
+        "skills/secret-serialization/SOURCES.md",
+        "skills/secret-serialization/references/python.md",
+        "skills/secret-serialization/references/javascript-typescript.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage"
+      ],
+      "applicable_scenarios": [
+        "python",
+        "javascript",
+        "typescript",
+        "credentials"
+      ],
+      "stages": [
+        "independent",
+        "feedback",
+        "expansion"
+      ],
+      "category": "specialty",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "skills/secret-serialization/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "skills/secret-serialization/SKILL.md",
+            "skills/secret-serialization/SOURCES.md"
+          ],
+          "sha256": "a01bf4109f9843b5248e1708217d8cc9098cac4948e5f39a988bb40278b80046"
+        },
+        "references/serialization-paths.md": {
+          "sha256": "947b9271c054769d87cd9e1bf9765bb4bf89fb29f6f9c9c3370c93d73b29ce22",
+          "source_paths": [
+            "skills/secret-serialization/references/python.md",
+            "skills/secret-serialization/references/javascript-typescript.md"
+          ]
+        }
+      },
+      "runtime": "discovery_v2",
+      "default_resources": [
+        "references/serialization-paths.md"
+      ]
+    },
+    "autocve-gha-review": {
+      "slug": "autocve-gha-review",
+      "name": "GitHub Actions 静态审计",
+      "description": "针对 .github/workflows、组合 action 和本地复用脚本，按真实事件与主体权限建模。",
+      "upstream_repo": "https://github.com/getsentry/skills",
+      "upstream_commit": "f57ada2d0b640406ea7e25b11d636c530e77c58b",
+      "license": "Apache-2.0",
+      "source_paths": [
+        "skills/gha-security-review/SKILL.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage"
+      ],
+      "applicable_scenarios": [
+        "github_actions"
+      ],
+      "stages": [
+        "independent",
+        "feedback",
+        "expansion"
+      ],
+      "category": "specialty",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "skills/gha-security-review/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "skills/gha-security-review/SKILL.md"
+          ],
+          "sha256": "f32dcfc65a0ad860e7e0b6bbd291fd307f51dc41118a6e32aa1eee4757fbf8e0"
+        }
+      },
+      "runtime": "discovery_v2"
+    },
+    "autocve-skill-import-review": {
+      "slug": "autocve-skill-import-review",
+      "name": "外部 Skill 导入审阅",
+      "description": "仅用于维护者审阅外部 Skill 包；不自动绑定到普通源码审计 worker。",
+      "upstream_repo": "https://github.com/getsentry/skills",
+      "upstream_commit": "f57ada2d0b640406ea7e25b11d636c530e77c58b",
+      "license": "Apache-2.0",
+      "source_paths": [
+        "skills/skill-scanner/SKILL.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob"
+      ],
+      "applicable_scenarios": [
+        "skill_import"
+      ],
+      "stages": [
+        "import_review"
+      ],
+      "category": "import_review",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "skills/skill-scanner/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "skills/skill-scanner/SKILL.md"
+          ],
+          "sha256": "b193e9f8a5cafff85072b9a27421c247e5641fe84776f7c7aa7c28ef3a435c2c"
+        }
+      },
+      "runtime": "import_review"
+    },
+    "autocve-cloudflare-domains": {
+      "slug": "autocve-cloudflare-domains",
+      "name": "Cloudflare 多场景领域参考",
+      "description": "一个来源包，十个按场景选择的参考模块，不运行 Cloudflare 的完整审计/验证/报告编排。",
+      "upstream_repo": "https://github.com/cloudflare/security-audit-skill",
+      "upstream_commit": "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8",
+      "license": "MIT",
+      "source_paths": [
+        "skills/security-audit/SKILL.md",
+        "skills/security-audit/AI-AND-LLM.md",
+        "skills/security-audit/WEB-PROTOCOL-AND-AUTH.md",
+        "skills/security-audit/CLIENT-SIDE.md",
+        "skills/security-audit/MEMORY-SAFETY-AND-BINARY.md",
+        "skills/security-audit/CLOUD-AND-DEPLOYMENT.md",
+        "skills/security-audit/PROTOCOLS-RPC-AND-MESSAGING.md",
+        "skills/security-audit/RESOURCE-EXHAUSTION-AND-AVAILABILITY.md",
+        "skills/security-audit/DATA-ISOLATION-AND-LIFECYCLE.md",
+        "skills/security-audit/SUPPLY-CHAIN-AND-RELEASE.md",
+        "skills/security-audit/DESKTOP-MOBILE-AND-LOCAL-IPC.md"
+      ],
+      "local_changes": [
+        "static-only adapter",
+        "AutoCVE task/evidence ledger",
+        "no upstream execution or workflow",
+        "three-state findings; source evidence required"
+      ],
+      "required_tools": [
+        "Read",
+        "Grep",
+        "Glob",
+        "RecordCandidate",
+        "RecordCoverage"
+      ],
+      "applicable_scenarios": [
+        "all_source"
+      ],
+      "stages": [
+        "independent",
+        "feedback",
+        "expansion"
+      ],
+      "category": "domain",
+      "output_contract_version": "discovery-candidate-v1",
+      "adaptation_version": "2026.10.16.1",
+      "entry_path": "skills/security-audit/SKILL.md",
+      "resources": {
+        "SKILL.md": {
+          "source_paths": [
+            "skills/security-audit/SKILL.md"
+          ],
+          "sha256": "4a02e59bd066b46c62aac120ac09340dd744959dd99953975672633a74bcfac4"
+        },
+        "references/AI-AND-LLM.md": {
+          "source_paths": [
+            "skills/security-audit/AI-AND-LLM.md"
+          ],
+          "sha256": "9409569bb52e3c4f17916a0c4bd9983e7a8e3b35cdbfa6a6c00894a344f6b96a"
+        },
+        "references/WEB-PROTOCOL-AND-AUTH.md": {
+          "source_paths": [
+            "skills/security-audit/WEB-PROTOCOL-AND-AUTH.md"
+          ],
+          "sha256": "572b5ac596f9f6e5a8a98e849ef701ae7875547b66388705818ac09134b88a3d"
+        },
+        "references/CLIENT-SIDE.md": {
+          "source_paths": [
+            "skills/security-audit/CLIENT-SIDE.md"
+          ],
+          "sha256": "f58117d32e7c4388134e1cb3712dedc2c91b213745351495a4fc5abaef74b29f"
+        },
+        "references/MEMORY-SAFETY-AND-BINARY.md": {
+          "source_paths": [
+            "skills/security-audit/MEMORY-SAFETY-AND-BINARY.md"
+          ],
+          "sha256": "9e84ab2cda95f9357d28f17572e69aa8af576a9220c435de798d4d9063629174"
+        },
+        "references/CLOUD-AND-DEPLOYMENT.md": {
+          "source_paths": [
+            "skills/security-audit/CLOUD-AND-DEPLOYMENT.md"
+          ],
+          "sha256": "b6dd2af3e059eeb8dbbd5676e5598c9aa55892a8331174480aa62592a3535df2"
+        },
+        "references/PROTOCOLS-RPC-AND-MESSAGING.md": {
+          "source_paths": [
+            "skills/security-audit/PROTOCOLS-RPC-AND-MESSAGING.md"
+          ],
+          "sha256": "a1cdd9ad3f4cce62b1a055406c710cb2a44fd92a30b22bea625bb666be7fbde0"
+        },
+        "references/RESOURCE-EXHAUSTION-AND-AVAILABILITY.md": {
+          "source_paths": [
+            "skills/security-audit/RESOURCE-EXHAUSTION-AND-AVAILABILITY.md"
+          ],
+          "sha256": "b897da7c6d5b205a650c68f1511eae0149569d4bf295fa68253274cb4d848c72"
+        },
+        "references/DATA-ISOLATION-AND-LIFECYCLE.md": {
+          "source_paths": [
+            "skills/security-audit/DATA-ISOLATION-AND-LIFECYCLE.md"
+          ],
+          "sha256": "e7b1044da1d5289a2c9969f9b2307c835ff681a41e22bd25a14b5029105b967c"
+        },
+        "references/SUPPLY-CHAIN-AND-RELEASE.md": {
+          "source_paths": [
+            "skills/security-audit/SUPPLY-CHAIN-AND-RELEASE.md"
+          ],
+          "sha256": "72b3d2c738e366b3da496c47ea11457f1ae139481a0701f3106cf39b1bf9915b"
+        },
+        "references/DESKTOP-MOBILE-AND-LOCAL-IPC.md": {
+          "source_paths": [
+            "skills/security-audit/DESKTOP-MOBILE-AND-LOCAL-IPC.md"
+          ],
+          "sha256": "60c9a2f4cc33725ba87f62f6b99417a551fcf731181590bb40724702df4d679d"
+        }
+      },
+      "runtime": "discovery_v2"
+    }
+  },
+  "deferred": {
+    "codeql": "No CodeQL build/query backend connected",
+    "semgrep-rule-creator": "Rule execution and positive/negative fixture workflow not connected",
+    "constant-time-analysis": "No binary/compiler/timing validation",
+    "zeroize-audit": "No specialized zeroization backend; ordinary source lifecycle review only",
+    "fp-check": "Full binary judgment / dynamic verification incompatible with this phase",
+    "sentry/security-review": "Generic workflow overlaps primary method; authenticated authorization findings remain in scope"
+  }
+}

@@ -105,7 +105,7 @@ const t: Translate = (key, values) => {
   let text = dashboardText[key] ?? key;
   if (values) {
     for (const [name, value] of Object.entries(values)) {
-      text = text.replaceAll(`{{${name}}}`, String(value));
+      text = text.split(`{{${name}}}`).join(String(value));
     }
   }
   return text;
@@ -259,7 +259,7 @@ export default function Dashboard() {
       <div className="absolute inset-0 cyber-grid-subtle pointer-events-none" />
 
       <div className="relative z-10 mx-auto max-w-[1500px] space-y-5">
-        <section className="overflow-hidden rounded-[30px] border border-[#d6e4da] bg-[linear-gradient(180deg,#ffffff,#f4faf6)] shadow-[0_24px_60px_rgba(96,120,101,0.08)]">
+        <section className="overflow-hidden rounded-lg border border-[#d6e4da] bg-[linear-gradient(180deg,#ffffff,#f4faf6)] shadow-sm">
           <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div className="relative min-h-[230px] px-6 py-6 lg:px-8 lg:py-7">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,#e4f1e8,#ffffff_60%)]" />
@@ -290,13 +290,13 @@ export default function Dashboard() {
             </div>
 
             <div className="border-t border-[#d6e4da] bg-white p-5 xl:border-l xl:border-t-0">
-              <div className="flex h-full flex-col justify-between rounded-[24px] border border-[#dbe7df] bg-[#f8fbf9] p-5">
+              <div className="flex h-full flex-col justify-between rounded-lg border border-[#dbe7df] bg-[#f8fbf9] p-5">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold text-slate-500">{t("dashboard.auditTrend")}</p>
                     <p className="mt-1 text-2xl font-bold text-slate-900">{stats?.total_tasks || 0}</p>
                   </div>
-                  <span className="flex h-12 w-12 items-center justify-center rounded-[18px] border border-[#dbe7df] bg-white text-[hsl(var(--primary))]">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-lg border border-[#dbe7df] bg-white text-[hsl(var(--primary))]">
                     <Activity className="h-5 w-5" />
                   </span>
                 </div>
@@ -312,7 +312,7 @@ export default function Dashboard() {
         </section>
 
         {isDemoMode && (
-          <div className="rounded-[24px] border border-amber-300 bg-amber-50 p-4 shadow-[0_12px_28px_rgba(160,115,48,0.07)]">
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 shadow-sm">
             <div className="flex items-start gap-3">
               <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-600" />
               <div className="text-sm text-slate-700">
@@ -333,7 +333,7 @@ export default function Dashboard() {
             return (
               <div
                 key={card.label}
-                className="rounded-[26px] border border-[#dbe7df] bg-white p-5 shadow-[0_18px_44px_rgba(84,110,93,0.07)]"
+                className="rounded-lg border border-[#dbe7df] bg-white p-5 shadow-sm"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
@@ -344,7 +344,7 @@ export default function Dashboard() {
                       {card.detail}
                     </p>
                   </div>
-                  <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] border border-slate-200/70 bg-slate-50 ${card.tone}`}>
+                  <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-slate-200/70 bg-slate-50 ${card.tone}`}>
                     <Icon className="h-5 w-5" />
                   </span>
                 </div>
@@ -355,7 +355,7 @@ export default function Dashboard() {
 
         <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
           <div className="space-y-5">
-            <div className="rounded-[28px] border border-[#dbe7df] bg-white p-5 shadow-[0_18px_48px_rgba(84,110,93,0.08)]">
+            <div className="rounded-lg border border-[#dbe7df] bg-white p-5 shadow-sm">
               <SectionHeader icon={<FileText className="h-5 w-5 text-[hsl(var(--primary))]" />} title={t("dashboard.projectOverview")} to="/projects" t={t} />
               <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
                 {recentProjects.length > 0 ? (
@@ -363,7 +363,7 @@ export default function Dashboard() {
                     <Link
                       key={project.id}
                       to={`/projects/${project.id}`}
-                      className="group rounded-[22px] border border-[#dce3e0] bg-[#f8fbf9] p-4 transition hover:border-[#b7d1c1] hover:bg-white"
+                      className="group rounded-lg border border-[#dce3e0] bg-[#f8fbf9] p-4 transition hover:border-[#b7d1c1] hover:bg-white"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <h4 className="min-w-0 truncate text-base font-semibold text-slate-800 transition group-hover:text-[hsl(var(--primary))]">
@@ -392,7 +392,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-[#dbe7df] bg-white p-5 shadow-[0_18px_48px_rgba(84,110,93,0.08)]">
+            <div className="rounded-lg border border-[#dbe7df] bg-white p-5 shadow-sm">
               <SectionHeader icon={<Clock className="h-5 w-5 text-emerald-600" />} title={t("dashboard.recentTasks")} to="/audit-tasks" t={t} />
               <div className="space-y-3">
                 {recentTasks.length > 0 ? (
@@ -411,7 +411,7 @@ export default function Dashboard() {
                       <Link
                         key={`${unified.kind}-${task.id}`}
                         to={taskLink}
-                        className="group grid gap-3 rounded-[22px] border border-transparent bg-[#f8fbf9] p-4 transition hover:border-[#b7d1c1] hover:bg-white md:grid-cols-[minmax(0,1fr)_auto]"
+                        className="group grid gap-3 rounded-lg border border-transparent bg-[#f8fbf9] p-4 transition hover:border-[#b7d1c1] hover:bg-white md:grid-cols-[minmax(0,1fr)_auto]"
                       >
                         <div className="flex min-w-0 items-center gap-3">
                           <span
@@ -450,9 +450,9 @@ export default function Dashboard() {
           </div>
 
           <aside className="space-y-5">
-            <div className="rounded-[28px] border border-[#dbe7df] bg-white p-5 shadow-[0_18px_48px_rgba(84,110,93,0.08)]">
+            <div className="rounded-lg border border-[#dbe7df] bg-white p-5 shadow-sm">
               <SectionHeader icon={<ShieldAlert className="h-5 w-5 text-rose-600" />} title={t("dashboard.riskOverview")} to="/vulnerabilities" t={t} />
-              <div className="rounded-[24px] border border-[#ead5d5] bg-[linear-gradient(180deg,#fffafa,#fff)] p-4">
+              <div className="rounded-lg border border-[#ead5d5] bg-[linear-gradient(180deg,#fffafa,#fff)] p-4">
                 <div className="flex items-end justify-between">
                   <div>
                     <p className="text-sm font-semibold text-slate-500">{t("dashboard.highRiskFocus")}</p>
@@ -472,7 +472,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-[#dbe7df] bg-white p-5 shadow-[0_18px_48px_rgba(84,110,93,0.08)]">
+            <div className="rounded-lg border border-[#dbe7df] bg-white p-5 shadow-sm">
               <div className="section-header">
                 <Zap className="h-5 w-5 text-[hsl(var(--primary))]" />
                 <h3 className="section-title">{t("dashboard.quickActions")}</h3>
@@ -485,7 +485,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-[#dbe7df] bg-white p-5 shadow-[0_18px_48px_rgba(84,110,93,0.08)]">
+            <div className="rounded-lg border border-[#dbe7df] bg-white p-5 shadow-sm">
               <div className="section-header">
                 <Activity className="h-5 w-5 text-amber-600" />
                 <h3 className="section-title">{t("dashboard.latestActivity")}</h3>
@@ -509,7 +509,7 @@ export default function Dashboard() {
                       <Link
                         key={`${unified.kind}-${task.id}`}
                         to={taskLink}
-                        className={`block rounded-[20px] border p-3 transition ${
+                        className={`block rounded-lg border p-3 transition ${
                           isCompleted
                             ? "border-emerald-200 bg-emerald-50 hover:border-emerald-300"
                             : isRunning

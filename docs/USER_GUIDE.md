@@ -1,5 +1,7 @@
 # AutoCVE 使用手册
 
+> 本文保留上游功能说明与旧界面截图。本 fork 的安装命令、依赖版本和新功能以 [README](../README.md) 与 [改动清单](FORK_CHANGES.md) 为准。
+
 本文档将帮助用户快速了解并使用 AutoCVE，内容涵盖环境部署、模型配置、项目导入、Agent 审计、一键挖掘 CVE、漏洞管理和 Skills 管理等核心功能。
 
 ![仪表盘](./assets/user-guide/screenshots/仪表盘.png)

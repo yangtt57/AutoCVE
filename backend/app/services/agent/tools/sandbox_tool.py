@@ -14,6 +14,7 @@ import posixpath
 import socket
 import shutil
 import tarfile
+import uuid
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 from dataclasses import dataclass
@@ -234,6 +235,9 @@ class SandboxManager:
         env: Optional[Dict[str, str]] = None,
         network_mode: str = "none",
         artifact_paths: Optional[List[str]] = None,
+        artifact_output_dir: Optional[str] = None,
+        artifact_quota_bytes: int = 512 * 1024 * 1024,
+        readonly_rules_dir: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         在沙箱中对指定目录执行工具命令
@@ -276,6 +280,15 @@ class SandboxManager:
             # 清除代理环境变量：在命令前添加 unset（双重保险）
             unset_proxy_prefix = "unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy ALL_PROXY all_proxy 2>/dev/null; "
             wrapped_command = unset_proxy_prefix + command
+            completion_marker = None
+            if artifact_output_dir:
+                # Docker unmounts tmpfs as soon as PID 1 exits. Keep the container
+                # alive until its artifacts have been streamed to durable storage.
+                completion_marker = f"/tmp/autocve-tool-{uuid.uuid4().hex}.exit"
+                wrapped_command = (
+                    f"({wrapped_command}); tool_exit=$?; "
+                    f"printf '%s' \"$tool_exit\" > {completion_marker}; exec sleep 2147483647"
+                )
             docker_host_workdir = self._resolve_docker_host_workdir(host_workdir, docker_client=self._docker_client)
             if docker_host_workdir != host_workdir:
                 logger.info("Mapped sandbox workdir for Docker bind mount: %s -> %s", host_workdir, docker_host_workdir)
@@ -303,6 +316,9 @@ class SandboxManager:
             }
 
             # 安全配置：可通过环境变量调整
+            if readonly_rules_dir:
+                rules_mount = self._resolve_docker_host_workdir(readonly_rules_dir, docker_client=self._docker_client)
+                container_config["volumes"][rules_mount] = {"bind": "/audit-rules", "mode": "ro"}
             if self.config.cap_drop:
                 container_config["cap_drop"] = self.config.cap_drop
             if self.config.no_new_privileges:
@@ -317,7 +333,8 @@ class SandboxManager:
             try:
                 # 等待执行完成
                 result = await asyncio.wait_for(
-                    asyncio.to_thread(container.wait),
+                    self._wait_for_artifact_result(container, completion_marker)
+                    if completion_marker else asyncio.to_thread(container.wait),
                     timeout=timeout
                 )
                 
@@ -328,7 +345,9 @@ class SandboxManager:
                 stderr = await asyncio.to_thread(
                     container.logs, stdout=False, stderr=True
                 )
-                artifacts = await self._read_container_artifacts(container, artifact_paths or [])
+                artifacts = await self._read_container_artifacts(
+                    container, artifact_paths or [], output_dir=artifact_output_dir, quota_bytes=artifact_quota_bytes
+                )
 
                 return {
                     "success": result["StatusCode"] == 0,
@@ -342,6 +361,9 @@ class SandboxManager:
                 }
                 
             except asyncio.TimeoutError:
+                artifacts = await self._read_container_artifacts(
+                    container, artifact_paths or [], output_dir=artifact_output_dir, quota_bytes=artifact_quota_bytes
+                )
                 await asyncio.to_thread(container.kill)
                 return {
                     "success": False,
@@ -349,7 +371,7 @@ class SandboxManager:
                     "stdout": "",
                     "stderr": "",
                     "exit_code": -1,
-                    "artifacts": {},
+                    "artifacts": artifacts,
                 }
                 
             finally:
@@ -366,6 +388,22 @@ class SandboxManager:
                 "exit_code": -1,
                 "artifacts": {},
             }
+
+    @staticmethod
+    async def _wait_for_artifact_result(container, marker: str) -> Dict[str, int]:
+        from docker.errors import APIError
+
+        while True:
+            try:
+                result = await asyncio.to_thread(container.exec_run, ["cat", marker])
+            except APIError:
+                await asyncio.to_thread(container.reload)
+                if container.status in {"exited", "dead"}:
+                    return await asyncio.to_thread(container.wait)
+                raise
+            if result.exit_code == 0:
+                return {"StatusCode": int(result.output.decode().strip())}
+            await asyncio.sleep(0.2)
 
     @staticmethod
     def _resolve_docker_host_workdir(host_workdir: str, docker_client: Any = None) -> str:
@@ -424,13 +462,18 @@ class SandboxManager:
             return ntpath.normpath(ntpath.join(cleaned_root, *cleaned_relative.split("/")))
         return posixpath.normpath(posixpath.join(cleaned_root, cleaned_relative))
 
-    async def _read_container_artifacts(self, container, artifact_paths: List[str]) -> Dict[str, Dict[str, Any]]:
+    async def _read_container_artifacts(self, container, artifact_paths: List[str], *, output_dir=None, quota_bytes=512 * 1024 * 1024) -> Dict[str, Dict[str, Any]]:
         artifacts: Dict[str, Dict[str, Any]] = {}
         for artifact_path in artifact_paths:
             normalized_path = str(artifact_path or "").strip()
             if not normalized_path:
                 continue
             try:
+                if output_dir:
+                    artifacts[normalized_path] = await asyncio.to_thread(
+                        self._stream_container_file, container, normalized_path, output_dir, quota_bytes
+                    )
+                    continue
                 content = await asyncio.to_thread(self._read_container_file, container, normalized_path)
                 artifacts[normalized_path] = {
                     "content": content.decode("utf-8", errors="replace"),
@@ -445,6 +488,84 @@ class SandboxManager:
                     "error": str(exc),
                 }
         return artifacts
+
+    @staticmethod
+    def _stream_container_file(container, artifact_path, output_dir, quota_bytes):
+        """Spool the tar stream; never materialize the archive or JSON in RAM."""
+        import tempfile
+        from pathlib import Path
+
+        root = Path(output_dir)
+        root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        target = root / Path(artifact_path).name
+        written = 0
+        error = None
+        try:
+            try:
+                chunks, _ = container.get_archive(artifact_path)
+            except Exception as exc:
+                from docker.errors import NotFound
+
+                if not isinstance(exc, NotFound):
+                    raise
+                # Some Docker engines cannot archive files on tmpfs even while
+                # the container is alive. A read-only exec streams the same bytes.
+                result = container.exec_run(["cat", artifact_path], stream=True, demux=True)
+                stream = result.output
+                stderr = bytearray()
+                try:
+                    with target.open("wb") as output:
+                        for stdout, err in stream:
+                            if err:
+                                stderr.extend(err[:max(0, 4096 - len(stderr))])
+                            if not stdout:
+                                continue
+                            remaining = max(0, quota_bytes - written)
+                            output.write(stdout[:remaining])
+                            written += min(len(stdout), remaining)
+                            if len(stdout) > remaining:
+                                error = "Artifact storage quota exceeded; retained prefix"
+                                break
+                finally:
+                    if hasattr(stream, "close"):
+                        try:
+                            stream.close()
+                        except OSError:
+                            # Docker may already have closed the socket at EOF.
+                            pass
+                if stderr:
+                    error = stderr.decode("utf-8", errors="replace")
+                if result.exit_code not in (None, 0):
+                    error = error or f"Artifact read exited with {result.exit_code}"
+                return {"path": str(target), "bytes": written, "error": error, "encoding": "utf-8"}
+            with tempfile.TemporaryFile() as spool:
+                received = 0
+                for chunk in chunks:
+                    remaining = quota_bytes + 1024 * 1024 - received
+                    if remaining <= 0:
+                        error = "Artifact storage quota exceeded; retained prefix"
+                        break
+                    spool.write(chunk[:remaining])
+                    received += min(len(chunk), remaining)
+                spool.seek(0)
+                with tarfile.open(fileobj=spool, mode="r|*") as archive:
+                    for member in archive:
+                        if not member.isfile():
+                            continue
+                        extracted = archive.extractfile(member)
+                        with target.open("wb") as out:
+                            while written < quota_bytes:
+                                data = extracted.read(min(65536, quota_bytes - written))
+                                if not data:
+                                    break
+                                out.write(data)
+                                written += len(data)
+                        if member.size > written:
+                            error = "Artifact incomplete (quota or truncated archive)"
+                        break
+        except Exception as exc:
+            error = str(exc)
+        return {"path": str(target), "bytes": written, "error": error, "encoding": "utf-8"}
 
     @staticmethod
     def _read_container_file(container, artifact_path: str) -> bytes:

@@ -46,6 +46,11 @@ pids
 *.seed
 *.pid.lock
 
+# Generated skill indexes/mirrors contain machine-local absolute paths.
+# Authoritative agent bindings remain in skill_library/agents/*/bindings.json.
+/skill_library/.runtime/
+/skill_library/*/bindings.json
+
 # Coverage directory used by tools like istanbul
 coverage/
 *.lcov
@@ -182,6 +187,7 @@ semgrep_results.json
 gitleaks_results.json
 trufflehog_results.json
 backend/uploads/checkmarx/
+backend/uploads/discovery_v2/
 
 # Test files
 ttt/

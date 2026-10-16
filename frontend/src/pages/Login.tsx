@@ -68,7 +68,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef4f0_0%,#f8faf8_42%,#e4ece7_100%)] p-4 md:p-8">
       <div
-        className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-7xl overflow-hidden rounded-[36px] border border-white/80 bg-cover bg-left-center shadow-[0_34px_90px_rgba(72,91,82,0.18)] md:min-h-[calc(100vh-4rem)] lg:grid-cols-[1.08fr_0.92fr]"
+        className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-7xl overflow-hidden rounded-lg border border-white/80 bg-cover bg-left-center shadow-sm md:min-h-[calc(100vh-4rem)] lg:grid-cols-[1.08fr_0.92fr]"
         style={{ backgroundImage: `url(${loginBackground})` }}
       >
         <section className="relative hidden min-h-[720px] overflow-hidden bg-transparent lg:block">
@@ -77,8 +77,8 @@ export default function Login() {
             style={{ backgroundImage: `url(${loginBackground})` }}
           />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0.16)_58%,rgba(255,255,255,0.5)_100%)]" />
-          <div className="absolute left-10 top-10 flex items-center gap-4 rounded-[24px] border border-white/70 bg-white/75 px-5 py-4 shadow-[0_20px_48px_rgba(67,87,76,0.12)] backdrop-blur-md">
-            <div className="flex h-14 w-14 items-center justify-center rounded-[20px] border border-slate-200/80 bg-white shadow-sm">
+          <div className="absolute left-10 top-10 flex items-center gap-4 rounded-lg border border-white/70 bg-white/75 px-5 py-4 shadow-sm ">
+            <div className="flex h-14 w-14 items-center justify-center rounded-lg border border-slate-200/80 bg-white shadow-sm">
               <img src="/autocve_icon.svg" alt="AutoCVE" className="h-10 w-10 object-contain" />
             </div>
             <div>
@@ -88,7 +88,7 @@ export default function Login() {
           </div>
         </section>
 
-        <section className="relative flex min-h-[calc(100vh-2rem)] items-center justify-center overflow-hidden bg-white/[0.18] p-6 backdrop-blur-[2px] sm:p-10 md:min-h-[calc(100vh-4rem)] xl:p-14">
+        <section className="relative flex min-h-[calc(100vh-2rem)] items-center justify-center overflow-hidden bg-white/[0.18] p-6 -[2px] sm:p-10 md:min-h-[calc(100vh-4rem)] xl:p-14">
           <div
             className="absolute inset-0 bg-cover bg-left-center opacity-20 lg:hidden"
             style={{ backgroundImage: `url(${loginBackground})` }}
@@ -104,7 +104,7 @@ export default function Login() {
               </h1>
             </div>
 
-            <div className="rounded-[32px] border border-slate-200/80 bg-white/92 p-7 shadow-[0_28px_72px_rgba(77,95,84,0.14)] backdrop-blur-xl sm:p-8">
+            <div className="rounded-lg border border-slate-200/80 bg-white/92 p-7 shadow-sm  sm:p-8">
               <div className="mb-8">
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -165,12 +165,12 @@ export default function Login() {
                   <span className="text-slate-400">{"\u5b89\u5168\u767b\u5f55"}</span>
                 </div>
 
-                <Button type="submit" disabled={loading} className="cyber-btn-primary h-14 w-full rounded-[20px] text-base">
+                <Button type="submit" disabled={loading} className="cyber-btn-primary h-14 w-full rounded-lg text-base">
                   {loading ? "\u767b\u5f55\u4e2d..." : "\u767b\u5f55\u5e76\u8fdb\u5165\u5de5\u4f5c\u53f0"}
                 </Button>
               </form>
 
-              <div className="mt-7 flex items-center justify-between rounded-[22px] bg-slate-100/70 px-5 py-4 text-sm">
+              <div className="mt-7 flex items-center justify-between rounded-lg bg-slate-100/70 px-5 py-4 text-sm">
                 <span className="text-slate-500">{"\u8fd8\u6ca1\u6709\u8d26\u53f7\uff1f"}</span>
                 <Link to="/register" className="inline-flex items-center gap-1.5 font-semibold text-[hsl(var(--primary))]">
                   {"\u521b\u5efa\u65b0\u8d26\u53f7"}

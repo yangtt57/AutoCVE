@@ -13,12 +13,12 @@ function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen gradient-bg">
+    <div className="min-h-screen app-shell bg-background">
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
       <main
-        className={`min-h-screen transition-all duration-300 ${collapsed ? "md:ml-[104px]" : "md:ml-[296px]"}`}
+        className={`min-h-screen transition-all duration-300 ${collapsed ? "md:ml-[72px]" : "md:ml-[224px]"}`}
       >
-        <div className="min-h-screen px-4 pb-6 pt-4 md:px-6 md:pb-8 md:pt-6">
+        <div className="min-h-screen px-4 pb-6 pt-20 md:px-8 md:pb-8 md:pt-8">
           <div className="mx-auto min-h-[calc(100vh-2rem)] max-w-[1680px]">
             <Outlet />
           </div>

@@ -1,0 +1,11 @@
+# Optional DNS override, selected automatically by scripts/verify-stack.sh.
+# Without this file, both services inherit the Docker host's DNS configuration.
+services:
+  verifier-dind:
+    dns:
+      - ${VERIFIER_DNS:?Set VERIFIER_DNS to a container-reachable resolver}
+      - ${VERIFIER_DNS_FALLBACK:-${VERIFIER_DNS}}
+  pi-verifier:
+    dns:
+      - ${VERIFIER_DNS:?Set VERIFIER_DNS to a container-reachable resolver}
+      - ${VERIFIER_DNS_FALLBACK:-${VERIFIER_DNS}}

@@ -271,14 +271,14 @@ export default function OneClickCVE() {
     <div className="cyber-bg-elevated relative min-h-screen w-full min-w-0 overflow-x-hidden">
       <div className="pointer-events-none absolute inset-0 cyber-grid-subtle" />
       <div className="relative z-10 mx-auto flex w-full max-w-[1500px] flex-col gap-5 p-5">
-        <section className="overflow-hidden rounded-[28px] border border-[#d3e2d9] bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(241,248,244,0.94))] shadow-[0_24px_70px_rgba(61,85,75,0.13)]">
+        <section className="overflow-hidden rounded-lg border border-[#d3e2d9] bg-card shadow-sm">
           <div className="flex flex-col gap-5 p-6 lg:flex-row lg:items-center lg:justify-between lg:p-7">
             <div className="flex min-w-0 gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-emerald-200 bg-[linear-gradient(180deg,#ffffff,#eff8f2)] text-emerald-700 shadow-[0_16px_30px_rgba(61,85,75,0.12)]">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-emerald-200 bg-card text-emerald-700 shadow-sm">
                 <Sparkles className="h-7 w-7" />
               </div>
               <div className="min-w-0">
-                <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#bed1c8] bg-white/90 px-3 py-1 text-xs font-semibold text-[#50715d] shadow-[0_8px_18px_rgba(61,85,75,0.06)]">
+                <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#bed1c8] bg-white/90 px-3 py-1 text-xs font-semibold text-[#50715d] shadow-sm">
                   <Github className="h-3.5 w-3.5" />
                   GitHub CVE Discovery
                 </div>
@@ -289,7 +289,7 @@ export default function OneClickCVE() {
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
-              <Button variant="outline" className="h-11 rounded-xl border-[#d6e3dc] bg-white/92 shadow-[0_10px_24px_rgba(61,85,75,0.07)]" onClick={() => loadBatches()} disabled={loading}>
+              <Button variant="outline" className="h-11 rounded-xl border-[#d6e3dc] bg-white/92 shadow-sm" onClick={() => loadBatches()} disabled={loading}>
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 刷新
               </Button>
@@ -299,7 +299,7 @@ export default function OneClickCVE() {
                   停止
                 </Button>
               )}
-              <Button className="h-11 rounded-xl bg-[#5e7a63] px-5 text-white shadow-[0_14px_30px_rgba(94,122,99,0.24)] hover:bg-[#4e6a55]" onClick={() => setDialogOpen(true)}>
+              <Button className="h-11 rounded-xl bg-[#5e7a63] px-5 text-white shadow-sm hover:bg-[#4e6a55]" onClick={() => setDialogOpen(true)}>
                 <Play className="h-4 w-4" />
                 启动
               </Button>
@@ -309,7 +309,7 @@ export default function OneClickCVE() {
 
         <section className="grid min-h-0 gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
           <aside className="min-h-0">
-            <div className="flex h-full min-h-[620px] flex-col rounded-[24px] border border-[#d7e4dc] bg-white/94 p-4 shadow-[0_18px_46px_rgba(61,85,75,0.08)] backdrop-blur">
+            <div className="flex h-full min-h-[620px] flex-col rounded-lg border border-[#d7e4dc] bg-white/94 p-4 shadow-sm ">
               <div className="mb-4 flex shrink-0 items-center justify-between">
                 <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
                   <History className="h-4 w-4 text-[#5e7a63]" />
@@ -335,7 +335,7 @@ export default function OneClickCVE() {
                       }}
                       className={`w-full rounded-2xl border px-4 py-3 text-left transition duration-200 ${
                         activeItem
-                          ? "border-emerald-300 bg-[linear-gradient(135deg,#ecfbf2,#f7fdf9)] shadow-[0_12px_28px_rgba(94,122,99,0.12)]"
+                          ? "border-emerald-300 bg-card shadow-sm"
                           : "border-[#e2ebe6] bg-white hover:border-[#b9cec2] hover:bg-[#fbfdfb]"
                       }`}
                     >
@@ -364,7 +364,7 @@ export default function OneClickCVE() {
               <MetricTile label="Reportable" value={batchStats.reportable} icon={<BadgeCheck className="h-4 w-4" />} tone="emerald" />
             </div>
 
-            <section className="rounded-[24px] border border-[#d7e4dc] bg-white/95 p-5 shadow-[0_18px_46px_rgba(61,85,75,0.08)] backdrop-blur">
+            <section className="rounded-lg border border-[#d7e4dc] bg-white/95 p-5 shadow-sm ">
               {selectedBatch ? (
                 <div className="space-y-4">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -406,8 +406,8 @@ export default function OneClickCVE() {
               )}
             </section>
 
-            <section className="overflow-hidden rounded-[24px] border border-[#d7e4dc] bg-white/95 shadow-[0_18px_46px_rgba(61,85,75,0.08)] backdrop-blur">
-              <div className="flex flex-col gap-3 border-b border-[#e1ebe5] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,252,249,0.92))] px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+            <section className="overflow-hidden rounded-lg border border-[#d7e4dc] bg-white/95 shadow-sm ">
+              <div className="flex flex-col gap-3 border-b border-[#e1ebe5] bg-card px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-slate-950">扫描项目</h2>
                 </div>
@@ -436,11 +436,11 @@ export default function OneClickCVE() {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="overflow-hidden rounded-[24px] border border-[#d3e3da] bg-[#fbfdfb] p-0 shadow-[0_26px_80px_rgba(32,50,41,0.2)] sm:max-w-[520px]">
-          <div className="border-b border-[#e4eee8] bg-[linear-gradient(135deg,#ffffff_0%,#f2f8f4_100%)] px-6 pb-5 pt-6">
+        <DialogContent className="overflow-hidden rounded-lg border border-[#d3e3da] bg-[#fbfdfb] p-0 shadow-sm sm:max-w-[520px]">
+          <div className="border-b border-[#e4eee8] bg-card px-6 pb-5 pt-6">
             <DialogHeader className="space-y-3 text-left">
               <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#bfe4cd] bg-white text-[#32754c] shadow-[0_14px_28px_rgba(63,119,79,0.16)]">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#bfe4cd] bg-white text-[#32754c] shadow-sm">
                   <Sparkles className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
@@ -454,7 +454,7 @@ export default function OneClickCVE() {
           </div>
 
           <div className="space-y-4 px-6 py-5">
-            <div className="rounded-[18px] border border-[#dbe8e1] bg-white p-4 shadow-[0_12px_32px_rgba(53,74,62,0.08)]">
+            <div className="rounded-lg border border-[#dbe8e1] bg-white p-4 shadow-sm">
               <div className="mb-2 flex items-center justify-between gap-3">
                 <label className="text-sm font-semibold text-slate-900">目标漏洞数量</label>
                 <span className="rounded-full border border-[#d8e6de] bg-[#f7fbf8] px-2.5 py-1 text-xs font-medium text-[#5f7567]">
@@ -480,7 +480,7 @@ export default function OneClickCVE() {
               </div>
             </div>
 
-            <div className="rounded-[18px] border border-[#cfe3d6] bg-[linear-gradient(135deg,#f8fcf9_0%,#eef7f1_100%)] p-4 shadow-[0_12px_32px_rgba(53,74,62,0.08)]">
+            <div className="rounded-lg border border-[#cfe3d6] bg-card p-4 shadow-sm">
               <div className="flex min-h-12 items-center justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[#c6e6d0] bg-white text-[#397a52]">
@@ -509,7 +509,7 @@ export default function OneClickCVE() {
               取消
             </Button>
             <Button
-              className="h-11 rounded-2xl bg-[#5e7a63] px-6 text-white shadow-[0_12px_26px_rgba(80,112,86,0.28)] hover:bg-[#4e6a55]"
+              className="h-11 rounded-2xl bg-[#5e7a63] px-6 text-white shadow-sm hover:bg-[#4e6a55]"
               onClick={startBatch}
               disabled={starting}
             >
@@ -541,7 +541,7 @@ function MetricTile({
   }[tone];
 
   return (
-    <div className={`rounded-[22px] border px-4 py-4 shadow-[0_14px_34px_rgba(61,85,75,0.07)] backdrop-blur ${toneClass}`}>
+    <div className={`rounded-lg border px-4 py-4 shadow-sm  ${toneClass}`}>
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-slate-500">{label}</span>
         {icon}
@@ -556,13 +556,13 @@ function InteractiveProgress({ value, active }: { value: number; active: boolean
     <div className="space-y-2">
       <div className="relative h-3 overflow-hidden rounded-full border border-[#cfddd5] bg-[#edf4ef]">
         <div
-          className={`h-full rounded-full bg-[linear-gradient(90deg,#6b8b72,#8eb89a,#6b8b72)] transition-all duration-700 ${
+          className={`h-full rounded-full bg-primary transition-all duration-700 ${
             active ? "bg-[length:200%_100%] animate-pulse" : ""
           }`}
           style={{ width: `${Math.max(value, active ? 8 : 0)}%` }}
         />
         {active && (
-          <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent,rgba(255,255,255,0.68),transparent)] opacity-60 [animation:one-click-cve-sweep_1.8s_linear_infinite]" />
+          <div className="absolute inset-0 bg-card opacity-60 [animation:one-click-cve-sweep_1.8s_linear_infinite]" />
         )}
       </div>
       <div className="flex items-center justify-between text-xs text-slate-500">
@@ -647,7 +647,7 @@ function ProjectRow({
           )}
           {project.error_message && <div className="mt-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm leading-6 text-red-600">{project.error_message}</div>}
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2 rounded-2xl border border-[#dce8e1] bg-[#fbfdfb] p-2 shadow-[0_10px_26px_rgba(61,85,75,0.06)]">
+        <div className="flex shrink-0 flex-wrap items-center gap-2 rounded-2xl border border-[#dce8e1] bg-[#fbfdfb] p-2 shadow-sm">
           <div className="flex h-12 min-w-[72px] flex-col items-center justify-center rounded-xl border border-red-100 bg-red-50 px-3 text-center">
             <div className="text-[11px] font-semibold text-red-500">漏洞</div>
             <div className="text-xl font-bold leading-5 text-red-700">{project.findings_count}</div>

@@ -55,7 +55,7 @@ class ReportGenerator:
             }
             
             body {
-                font-family: "Songti SC", "SimSun", "Times New Roman", serif;
+                font-family: "Songti SC", "Noto Serif CJK SC", "SimSun", "Times New Roman", serif;
                 color: #000;
                 line-height: 1.3; /* Tighter line height */
                 font-size: 10pt;

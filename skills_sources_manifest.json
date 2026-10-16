@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "catalog_version": "2026.10.16.1",
+  "sources": {
+    "trailofbits": {
+      "upstream_repo": "https://github.com/trailofbits/skills",
+      "upstream_commit": "1f68e03536f7980d4c0e6869596f708043a19443",
+      "license": "CC-BY-SA-4.0",
+      "archive_path": "skill_sources/trailofbits/1f68e03536f7980d4c0e6869596f708043a19443/upstream.tar.gz",
+      "archive_sha256": "ff6a68d095e8e54e545b5827a849de81a3e2c1be31cf900311c8880a4e93159e",
+      "archive_url": "https://codeload.github.com/trailofbits/skills/tar.gz/1f68e03536f7980d4c0e6869596f708043a19443",
+      "execution_policy": "archive_only; never extract or execute during audit"
+    },
+    "cloudflare": {
+      "upstream_repo": "https://github.com/cloudflare/security-audit-skill",
+      "upstream_commit": "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8",
+      "license": "MIT",
+      "archive_path": "skill_sources/cloudflare/c1c8a8c1471069fb0e188eeaff69b8e8db6564a8/upstream.tar.gz",
+      "archive_sha256": "53e708ebf770dfe35b57df0586a5058707081a870cd149ce30a2d57c51ed29b6",
+      "archive_url": "https://codeload.github.com/cloudflare/security-audit-skill/tar.gz/c1c8a8c1471069fb0e188eeaff69b8e8db6564a8",
+      "execution_policy": "archive_only; never extract or execute during audit"
+    },
+    "sentry": {
+      "upstream_repo": "https://github.com/getsentry/skills",
+      "upstream_commit": "f57ada2d0b640406ea7e25b11d636c530e77c58b",
+      "license": "Apache-2.0",
+      "archive_path": "skill_sources/sentry/f57ada2d0b640406ea7e25b11d636c530e77c58b/upstream.tar.gz",
+      "archive_sha256": "a983277479308cd7dffb12f57d2c2fa11baccf43705347ea106d16ba029285f2",
+      "archive_url": "https://codeload.github.com/getsentry/skills/tar.gz/f57ada2d0b640406ea7e25b11d636c530e77c58b",
+      "execution_policy": "archive_only; never extract or execute during audit"
+    }
+  },
+  "catalog_path": "skill_library/.discovery/manifest.json",
+  "policy": "Fixed commits, offline runtime, reviewed text only. Full archives are inert; no installation scripts/hooks/tests executed."
+}

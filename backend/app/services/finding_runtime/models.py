@@ -52,6 +52,7 @@ class RuntimeStopReason(StrEnum):
 
 
 class RuntimeTerminalAction(StrEnum):
+    COMPLETE_AUDIT_TASK = "complete_audit_task"
     FINALIZE_FINDING = "finalize_finding"
     FINALIZE_VULNERABILITY_REPORTS = "finalize_vulnerability_reports"
     FINALIZE_TRIAGE_BATCH = "finalize_triage_batch"

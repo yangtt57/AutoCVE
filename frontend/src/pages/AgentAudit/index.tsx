@@ -40,6 +40,8 @@ import {
   AgentErrorBoundary,
 } from "./components";
 import ReportExportDialog from "./components/ReportExportDialog";
+import DiscoveryPanel from "./components/DiscoveryPanel";
+import { downloadDiscovery } from "@/shared/api/discovery";
 import { useAgentAuditState } from "./hooks";
 import { ACTION_VERBS, POLLING_INTERVALS } from "./constants";
 import { cleanThinkingContent, truncateOutput, createLogItem } from "./utils";
@@ -311,8 +313,8 @@ function AgentAuditPageContent() {
   }, [taskId, reset]);
 
   useEffect(() => {
-    setActiveDetailView('activity');
-  }, [taskId]);
+    setActiveDetailView(task?.discovery_v2?.enabled ? 'report' : 'activity');
+  }, [taskId, task?.discovery_v2?.enabled]);
 
   // ============ Data Loading ============
 
@@ -1399,6 +1401,10 @@ function AgentAuditPageContent() {
 
   const handleExportReport = () => {
     if (!task) return;
+    if (task.discovery_v2?.enabled) {
+      void downloadDiscovery(task.id, "export").catch(() => toast.error("账本导出失败"));
+      return;
+    }
     setShowExportDialog(true);
   };
 
@@ -1430,10 +1436,10 @@ function AgentAuditPageContent() {
 
   if (isLoading && !task) {
     return (
-      <div className="h-screen gradient-bg relative flex items-center justify-center overflow-hidden rounded-[34px] border border-white/65 bg-white/45 shadow-[0_24px_70px_rgba(88,97,110,0.10)] backdrop-blur-xl">
+      <div className="h-screen gradient-bg relative flex items-center justify-center overflow-hidden rounded-lg border border-white/65 bg-white/45 shadow-sm ">
         {/* Grid background */}
         <div className="absolute inset-0 cyber-grid opacity-40" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.7),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(214,230,236,0.35),transparent_26%)]" />
+        <div className="absolute inset-0 bg-card" />
         {/* Vignette */}
         <div className="absolute inset-0 vignette pointer-events-none" />
         <div className="flex items-center gap-3 text-muted-foreground relative z-10">
@@ -1445,9 +1451,9 @@ function AgentAuditPageContent() {
   }
 
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden rounded-[34px] border border-white/65 bg-white/45 shadow-[0_24px_70px_rgba(88,97,110,0.10)] backdrop-blur-xl">
+    <div className="relative flex h-screen flex-col overflow-hidden rounded-lg border border-white/65 bg-white/45 shadow-sm ">
       <div className="absolute inset-0 cyber-grid opacity-25 pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.72),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(186,214,224,0.24),transparent_22%),radial-gradient(circle_at_bottom_right,rgba(232,205,177,0.18),transparent_28%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-card pointer-events-none" />
 
       {/* Header */}
       <Header
@@ -1465,7 +1471,7 @@ function AgentAuditPageContent() {
       {/* Main content */}
       <div className="relative z-10 flex min-h-0 flex-1 overflow-hidden px-4 pb-4">
         {/* Left Panel - Activity Log */}
-        <div className="relative flex w-[68%] flex-col overflow-hidden rounded-[28px] border border-border/70 bg-white/82 shadow-[0_20px_48px_rgba(88,97,110,0.12)] backdrop-blur-xl">
+        <div className={`relative flex ${task?.discovery_v2?.enabled ? 'w-full' : 'w-[68%]'} flex-col overflow-hidden rounded-lg border border-border/70 bg-white/82 shadow-sm `}>
           {/* Detail header */}
           <div className="flex-shrink-0 border-b border-border bg-card px-5 py-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1477,7 +1483,7 @@ function AgentAuditPageContent() {
                     <FileText className="w-4 h-4 text-primary" />
                   )}
                   <span className="uppercase font-bold tracking-wider text-foreground text-sm">
-                    {activeDetailView === 'activity' ? '活动日志' : '漏洞报告'}
+                    {activeDetailView === 'activity' ? '活动日志' : task?.discovery_v2?.enabled ? '综合源码审计' : '漏洞报告'}
                   </span>
                 </div>
                 {activeDetailView === 'activity' && isConnected && (
@@ -1489,12 +1495,12 @@ function AgentAuditPageContent() {
                 <Badge variant="outline" className="h-6 px-2 text-xs border-border text-muted-foreground font-mono bg-muted">
                   {activeDetailView === 'activity'
                     ? `${filteredLogs.length}${!showAllLogs && logs.length !== filteredLogs.length ? ` / ${logs.length}` : ''} 条记录`
-                    : `${findings.length} 个漏洞`}
+                    : task?.discovery_v2?.enabled ? '静态候选与覆盖' : `${findings.length} 个漏洞`}
                 </Badge>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                {isComplete && (
+                {(isComplete || task?.discovery_v2?.enabled) && (
                   <div className="inline-flex rounded-full border border-border/70 bg-background/80 p-1 shadow-sm">
                     <button
                       type="button"
@@ -1506,10 +1512,10 @@ function AgentAuditPageContent() {
                     <button
                       type="button"
                       onClick={() => setActiveDetailView('report')}
-                      disabled={findings.length === 0}
+                      disabled={!task?.discovery_v2?.enabled && findings.length === 0}
                       className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${activeDetailView === 'report' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'} disabled:cursor-not-allowed disabled:opacity-45`}
                     >
-                      初步报告
+                      {task?.discovery_v2?.enabled ? '候选与覆盖' : '初步报告'}
                     </button>
                   </div>
                 )}
@@ -1519,7 +1525,7 @@ function AgentAuditPageContent() {
           </div>
 
           {/* Detail content */}
-          <div className="flex-1 overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.56),rgba(245,238,229,0.72))]">
+          <div className="flex-1 overflow-hidden bg-card">
             {activeDetailView === 'activity' ? (
               <div className="h-full overflow-y-auto p-5 custom-scrollbar">
                 {/* Filter indicator */}
@@ -1573,6 +1579,10 @@ function AgentAuditPageContent() {
                   </div>
                 )}
               </div>
+            ) : task?.discovery_v2?.enabled ? (
+              <div className="h-full overflow-y-auto p-5 custom-scrollbar">
+                <DiscoveryPanel taskId={task.id} taskStatus={task.status} onResumed={async () => { await loadTask(); }} />
+              </div>
             ) : findings.length > 0 || (task?.recovered_candidates_count ?? 0) > 0 ? (
               <div className="h-full overflow-y-auto p-5 custom-scrollbar">
                 <FinalReportPanel task={task} findings={findings} recoveredCandidates={task?.recovered_candidates || []} />
@@ -1606,7 +1616,7 @@ function AgentAuditPageContent() {
                 ) : isComplete ? (
                   <span className="flex items-center gap-2 text-muted-foreground font-mono">
                     <span className={`w-2 h-2 rounded-full ${task.status === 'completed' ? 'bg-emerald-500' : task.status === 'failed' ? 'bg-rose-500' : 'bg-amber-500'}`} />
-                    审计{task.status === 'completed' ? '已完成' : task.status === 'failed' ? '失败' : task.status === 'cancelled' ? '已取消' : '已结束'}
+                    审计{task.status === 'completed' ? '已完成' : task.status === 'partial' ? '部分完成' : task.status === 'failed' ? '失败' : task.status === 'cancelled' ? '已取消' : '已结束'}
                     {task.finding_outcome && task.finding_outcome !== 'none' ? (
                       <Badge
                         variant="outline"
@@ -1631,15 +1641,15 @@ function AgentAuditPageContent() {
                 )}
               </span>
               <div className="flex items-center gap-5 font-mono text-muted-foreground relative z-10">
-                <div className="flex items-center gap-1.5">
+                {!task.discovery_v2?.enabled && <div className="flex items-center gap-1.5">
                   <span className="text-primary font-bold text-sm">{task.progress_percentage?.toFixed(0) || 0}</span>
                   <span className="text-muted-foreground text-xs">%</span>
-                </div>
+                </div>}
                 <div className="w-px h-4 bg-border" />
                 <div className="flex items-center gap-1.5">
-                  <span className="text-foreground font-semibold">{task.analyzed_files}</span>
+                  <span className="text-foreground font-semibold">{task.coverage?.read_file_count ?? "未记录"}</span>
                   <span className="text-muted-foreground">/ {task.total_files}</span>
-                  <span className="text-muted-foreground text-xs">文件</span>
+                  <span className="text-muted-foreground text-xs">{task.discovery_v2?.enabled ? '文件已读取' : '文件'}</span>
                 </div>
                 <div className="w-px h-4 bg-border" />
                 <div className="flex items-center gap-1.5">
@@ -1652,7 +1662,8 @@ function AgentAuditPageContent() {
         </div>
 
         {/* Right Panel - Agent Tree + Stats */}
-        <div className="relative ml-4 flex min-h-0 w-[32%] flex-col overflow-hidden rounded-[28px] border border-border/70 bg-white/78 shadow-[0_20px_48px_rgba(88,97,110,0.10)] backdrop-blur-xl">
+        {!task?.discovery_v2?.enabled && (
+        <div className="relative ml-4 flex min-h-0 w-[32%] flex-col overflow-hidden rounded-lg border border-border/70 bg-white/78 shadow-sm ">
           {/* Agent Tree section */}
           <div className="flex min-h-0 basis-[34%] flex-col border-b border-border overflow-hidden">
             {/* Tree header */}
@@ -1687,7 +1698,7 @@ function AgentAuditPageContent() {
             </div>
 
             {/* Tree content or Agent Detail */}
-            <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-[linear-gradient(180deg,rgba(255,255,255,0.58),rgba(244,237,228,0.68))]">
+            <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-card">
               {selectedAgentId && !showAllLogs ? (
                 /* Agent Detail Panel - 瑕嗙洊鏁翠釜鍐呭鍖哄煙 */
                 <AgentDetailPanel
@@ -1729,6 +1740,7 @@ function AgentAuditPageContent() {
             <StatsPanel task={task} findings={findings} />
           </div>
         </div>
+        )}
       </div>
 
       {/* Create dialog */}

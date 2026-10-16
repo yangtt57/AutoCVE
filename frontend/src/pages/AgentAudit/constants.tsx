@@ -172,6 +172,11 @@ export const TASK_STATUS_CONFIG: Record<string, {
   icon: React.ReactNode;
   text: string;
 }> = {
+  partial: {
+    bg: "bg-amber-600",
+    icon: React.createElement(Clock, { className: "w-3 h-3" }),
+    text: "部分完成"
+  },
   pending: {
     bg: "bg-muted",
     icon: React.createElement(Clock, { className: "w-3 h-3" }),

@@ -582,7 +582,7 @@ export default function Projects() {
   }
 
   return (
-    <div className="relative min-h-screen space-y-6 overflow-hidden rounded-[34px] border border-white/65 bg-white/45 p-6 shadow-[0_24px_70px_rgba(88,97,110,0.10)] backdrop-blur-xl">
+    <div className="relative min-h-screen space-y-6 overflow-hidden rounded-lg border border-white/65 bg-white/45 p-6 shadow-sm ">
       {/* Grid background */}
       <div className="absolute inset-0 cyber-grid-subtle pointer-events-none" />
 
@@ -594,8 +594,8 @@ export default function Projects() {
             初始化项目
           </Button>
         </DialogTrigger>
-        <DialogContent className="!w-[min(92vw,760px)] !max-w-none max-h-[88vh] overflow-hidden flex flex-col gap-0 rounded-[28px] border border-slate-200/80 bg-white/95 p-0 shadow-[0_30px_90px_rgba(15,23,42,0.22)] backdrop-blur-xl">
-          <DialogHeader className="flex-shrink-0 border-b border-slate-200/70 bg-[radial-gradient(circle_at_12%_12%,rgba(52,211,153,0.16),transparent_32%),linear-gradient(135deg,rgba(240,253,244,0.98),rgba(255,255,255,0.96)_58%,rgba(248,250,252,0.98))] px-7 py-6">
+        <DialogContent className="!w-[min(92vw,760px)] !max-w-none max-h-[88vh] overflow-hidden flex flex-col gap-0 rounded-lg border border-slate-200/80 bg-white/95 p-0 shadow-sm ">
+          <DialogHeader className="flex-shrink-0 border-b border-slate-200/70 bg-card px-7 py-6">
             <DialogTitle className="flex items-center gap-3 text-2xl font-black tracking-tight text-slate-950">
               <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm">
                 <Terminal className="h-5 w-5" />
@@ -622,21 +622,21 @@ export default function Projects() {
               <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
                 <TabsTrigger
                   value="repository"
-                  className="h-11 rounded-xl text-sm font-bold text-slate-500 transition-all data-[state=active]:bg-emerald-700 data-[state=active]:text-white data-[state=active]:shadow-[0_12px_24px_rgba(5,150,105,0.22)]"
+                  className="h-11 rounded-xl text-sm font-bold text-slate-500 transition-all data-[state=active]:bg-emerald-700 data-[state=active]:text-white data-[state=active]:shadow-sm"
                 >
                   <GitBranch className="w-4 h-4 mr-2" />
                   Git 仓库
                 </TabsTrigger>
                 <TabsTrigger
                   value="upload"
-                  className="h-11 rounded-xl text-sm font-bold text-slate-500 transition-all data-[state=active]:bg-emerald-700 data-[state=active]:text-white data-[state=active]:shadow-[0_12px_24px_rgba(5,150,105,0.22)]"
+                  className="h-11 rounded-xl text-sm font-bold text-slate-500 transition-all data-[state=active]:bg-emerald-700 data-[state=active]:text-white data-[state=active]:shadow-sm"
                 >
                   <Upload className="w-4 h-4 mr-2" />
                   上传源码
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="repository" className="m-0 space-y-5 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm data-[state=inactive]:hidden">
+              <TabsContent value="repository" className="m-0 space-y-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm data-[state=inactive]:hidden">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label htmlFor="name" className="text-xs font-bold text-slate-600">项目名称 *</Label>
@@ -785,13 +785,13 @@ export default function Projects() {
                   <Button variant="outline" onClick={() => setShowCreateDialog(false)} className="rounded-2xl border-slate-200 bg-white px-6 shadow-sm" disabled={creatingProject}>
                     取消
                   </Button>
-                  <Button onClick={handleCreateProject} className="rounded-2xl bg-emerald-700 px-7 font-bold text-white shadow-[0_14px_30px_rgba(5,150,105,0.22)] hover:bg-emerald-800" disabled={creatingProject}>
+                  <Button onClick={handleCreateProject} className="rounded-2xl bg-emerald-700 px-7 font-bold text-white shadow-sm hover:bg-emerald-800" disabled={creatingProject}>
                     执行创建
                   </Button>
                 </div>
               </TabsContent>
 
-              <TabsContent value="upload" className="m-0 space-y-5 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm data-[state=inactive]:hidden">
+              <TabsContent value="upload" className="m-0 space-y-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm data-[state=inactive]:hidden">
                 <div className="flex flex-col gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="upload-name" className="text-xs font-bold text-slate-600">项目名称 *</Label>
@@ -854,7 +854,7 @@ export default function Projects() {
 
                   {!selectedFile ? (
                     <div
-                      className="group cursor-pointer rounded-[22px] border border-dashed border-emerald-300 bg-[linear-gradient(135deg,rgba(236,253,245,0.78),rgba(248,250,252,0.88))] p-6 text-center transition-all hover:border-emerald-500 hover:bg-emerald-50"
+                      className="group cursor-pointer rounded-lg border border-dashed border-emerald-300 bg-card p-6 text-center transition-all hover:border-emerald-500 hover:bg-emerald-50"
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-200 bg-white text-emerald-700 shadow-sm">
@@ -887,7 +887,7 @@ export default function Projects() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between rounded-[22px] border border-emerald-200 bg-emerald-50/70 p-4">
+                    <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50/70 p-4">
                       <div className="flex items-center space-x-3 overflow-hidden">
                         <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-emerald-200 bg-white">
                           <FileText className="h-5 w-5 text-emerald-700" />
@@ -920,7 +920,7 @@ export default function Projects() {
                   )}
                   </div>
 
-                  <div className="rounded-[22px] border border-slate-200 bg-slate-50/85 p-4">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50/85 p-4">
                     <div className="flex items-start gap-3">
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-emerald-200 bg-white text-emerald-700">
                         <AlertCircle className="h-4 w-4" />
@@ -952,7 +952,7 @@ export default function Projects() {
                   </Button>
                   <Button
                     onClick={handleUploadAndCreate}
-                    className="rounded-2xl bg-emerald-700 px-7 font-bold text-white shadow-[0_14px_30px_rgba(5,150,105,0.22)] hover:bg-emerald-800"
+                    className="rounded-2xl bg-emerald-700 px-7 font-bold text-white shadow-sm hover:bg-emerald-800"
                     disabled={!selectedFile || uploading}
                   >
                     {uploading ? '上传中...' : '执行创建'}

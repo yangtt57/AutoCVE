@@ -56,13 +56,13 @@ export default function Register() {
 
   return (
     <div className="min-h-screen gradient-bg p-4 md:p-6">
-      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-6xl overflow-hidden rounded-[40px] border border-white/70 bg-white/55 lg:grid-cols-[1.04fr_0.96fr] shadow-[0_28px_80px_rgba(88,97,110,0.12)] backdrop-blur-xl">
+      <div className="mx-auto grid min-h-[calc(100vh-2rem)] max-w-6xl overflow-hidden rounded-lg border border-white/70 bg-white/55 lg:grid-cols-[1.04fr_0.96fr] shadow-sm ">
         <section className="relative hidden border-r border-slate-200/70 bg-[linear-gradient(180deg,rgba(249,250,249,0.92),rgba(242,245,244,0.92))] p-10 lg:flex lg:flex-col xl:p-12">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.68),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(197,214,205,0.22),transparent_28%)]" />
           <div className="relative flex h-full flex-col justify-between">
             <div className="space-y-10">
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-[22px] border border-slate-200/80 bg-white/85 shadow-[0_14px_36px_rgba(92,104,120,0.08)]">
+                <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-slate-200/80 bg-white/85 shadow-sm">
                   <img src="/autocve_icon.svg" alt="AutoCVE" className="h-11 w-11 object-contain" />
                 </div>
                 <div>
@@ -87,7 +87,7 @@ export default function Register() {
                 {onboardingPoints.map(({ title, description, icon: Icon }) => (
                   <div key={title} className="auth-showcase-card p-6">
                     <div className="relative flex items-start gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/90 text-[hsl(var(--primary))] shadow-[0_10px_22px_rgba(111,167,132,0.12)]">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/90 text-[hsl(var(--primary))] shadow-sm">
                         <Icon className="h-5 w-5" />
                       </div>
                       <div>
@@ -110,7 +110,7 @@ export default function Register() {
         <section className="flex items-center justify-center p-6 sm:p-10 xl:p-12">
           <div className="w-full max-w-[520px]">
             <div className="mb-8 text-center lg:hidden">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[24px] border border-slate-200/80 bg-white/90 shadow-[0_14px_36px_rgba(92,104,120,0.08)]">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-lg border border-slate-200/80 bg-white/90 shadow-sm">
                 <img src="/autocve_icon.svg" alt="AutoCVE" className="h-11 w-11 object-contain" />
               </div>
               <h1 className="text-3xl font-semibold tracking-[-0.05em] text-slate-900">{"\u521b\u5efa AutoCVE \u8d26\u53f7"}</h1>
@@ -185,12 +185,12 @@ export default function Register() {
                   </div>
                 </div>
 
-                <Button type="submit" disabled={loading} className="cyber-btn-primary h-14 w-full rounded-[20px] text-base">
+                <Button type="submit" disabled={loading} className="cyber-btn-primary h-14 w-full rounded-lg text-base">
                   {loading ? "\u6ce8\u518c\u4e2d..." : "\u521b\u5efa\u8d26\u53f7"}
                 </Button>
               </form>
 
-              <div className="mt-7 flex items-center justify-between rounded-[22px] bg-slate-100/80 px-5 py-4 text-sm">
+              <div className="mt-7 flex items-center justify-between rounded-lg bg-slate-100/80 px-5 py-4 text-sm">
                 <span className="text-slate-500">{"\u5df2\u7ecf\u6709\u8d26\u53f7\uff1f"}</span>
                 <Link to="/login" className="inline-flex items-center gap-1.5 font-semibold text-[hsl(var(--primary))]">
                   {"\u8fd4\u56de\u767b\u5f55"}

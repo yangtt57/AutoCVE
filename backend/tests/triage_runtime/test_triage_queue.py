@@ -139,3 +139,40 @@ def test_triage_queue_finalizes_batch_and_persists_kept_findings(tmp_path):
     assert queue.coverage_summary()["pending_count"] == 1
     persisted = json.loads((tmp_path / ".auditai/scans/run-1/triage_findings.json").read_text(encoding="utf-8"))
     assert persisted[0]["title"] == "Reflected XSS"
+    partial = queue.finalize_triage(require_complete=False, summary="Budget exhausted")
+    assert partial["findings"][0]["title"] == "Reflected XSS"
+    assert partial["coverage"]["pending_count"] == 1
+    with pytest.raises(ValueError, match="not complete"):
+        queue.finalize_triage()
+
+
+@pytest.mark.asyncio
+async def test_runtime_triage_honors_turn_budget_and_retains_durable_findings(tmp_path, monkeypatch):
+    from unittest.mock import AsyncMock
+
+    from app.services import agent_runtime
+    from app.services.agent.agents.base import AgentResult
+    from app.services.agent.agents.orchestrator import OrchestratorAgent
+
+    index_ref = _write_scan_artifacts(tmp_path)
+    # A prior completed batch is already durable before this invocation.
+    persisted = [{"title": "Previously reviewed finding", "severity": "high"}]
+    (tmp_path / ".auditai/scans/run-1/triage_findings.json").write_text(json.dumps(persisted))
+    runner = AsyncMock(return_value={"turn_count": 2, "final_payload": {"findings": []}, "session_id": "session"})
+    class Bridge:
+        def __init__(self, **kwargs):
+            pass
+        run = runner
+    monkeypatch.setattr(agent_runtime, "AgentRuntimeBridge", Bridge)
+    agent = OrchestratorAgent(llm_service=None, tools={})
+    agent._runtime_context = {"project_root": str(tmp_path)}
+    agent.emit_event = AsyncMock()
+    agent._build_triage_runtime_payload = lambda **kwargs: {}
+    agent._build_triage_handoff = lambda data: None
+    result = await agent._run_runtime_triage(input_data={"task_id": "test"}, recon_result=AgentResult(success=True, data={}),
+                                           scan_result=AgentResult(success=True, data={"index_ref": index_ref}), config={"max_iterations": 2})
+    assert runner.await_count == 1
+    assert runner.call_args.kwargs["max_turns"] == 2
+    assert result.success and result.data["partial"]
+    assert result.data["findings"] == persisted
+    assert result.data["coverage"]["pending_count"] == 3

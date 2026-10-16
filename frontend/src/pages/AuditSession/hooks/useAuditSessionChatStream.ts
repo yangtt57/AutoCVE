@@ -41,7 +41,7 @@ export function useAuditSessionChatStream({
   sessionId?: string;
   setMessages: React.Dispatch<React.SetStateAction<AuditSessionMessage[]>>;
   refresh: (options?: { silent?: boolean }) => Promise<void>;
-  streamMessage?: (
+  streamMessage?: ((
     sessionId: string,
     content: string,
     mode?: AuditSessionMessageMode,
@@ -50,7 +50,9 @@ export function useAuditSessionChatStream({
       onEvent?: (event: AuditSessionStreamEvent) => void;
       signal?: AbortSignal;
     },
-  ) => Promise<AuditSessionStreamResult>;
+  ) => Promise<AuditSessionStreamResult>) | ((sessionId: string, content: string, handlers?: {
+    onEvent?: (event: AuditSessionStreamEvent) => void; signal?: AbortSignal;
+  }) => Promise<void>);
 }) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamError, setStreamError] = useState<string | null>(null);
@@ -248,14 +250,14 @@ export function useAuditSessionChatStream({
       if (streamMessage === streamAuditSessionMessage) {
         return streamMessage(sessionId, content, mode, selectedSkillRefs, handlers);
       }
-      return (streamMessage as unknown as (
+      return (streamMessage as (
         sessionId: string,
         content: string,
         handlers?: {
           onEvent?: (event: AuditSessionStreamEvent) => void;
           signal?: AbortSignal;
         },
-      ) => Promise<AuditSessionStreamResult>)(sessionId, content, handlers);
+      ) => Promise<void>)(sessionId, content, handlers).then(() => ({ mode }));
     });
   }, [runStreamRequest, sessionId, streamMessage]);
 

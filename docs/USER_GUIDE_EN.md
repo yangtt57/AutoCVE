@@ -1,5 +1,7 @@
 # AutoCVE User Guide
 
+> This guide retains upstream feature descriptions and screenshots. For this fork, follow the installation steps and requirements in the [README](../README_EN.md); see the [change notes](FORK_CHANGES.md) for additions.
+
 This document helps users quickly understand and use AutoCVE. It covers core features such as environment deployment, model configuration, project import, Agent auditing, one-click CVE discovery, vulnerability management, and Skills management.
 
 ![Dashboard](./assets/user-guide/screenshots/仪表盘.png)

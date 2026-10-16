@@ -21,6 +21,13 @@ const STATUS_CONFIG: Record<string, {
   glow?: string;
   animate?: boolean;
 }> = {
+  partial: {
+    icon: <AlertCircle className="w-3.5 h-3.5" />,
+    iconSm: <AlertCircle className="w-3 h-3" />,
+    bg: "bg-amber-50 border-amber-400/50",
+    text: "text-amber-700",
+    label: "部分完成",
+  },
   pending: {
     icon: <Clock className="w-3.5 h-3.5" />,
     iconSm: <Clock className="w-3 h-3" />,
